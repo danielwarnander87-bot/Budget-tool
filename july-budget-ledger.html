@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>July Ledger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0F1913;
+    --surface:#16241C;
+    --surface-2:#1D2E24;
+    --surface-3:#243A2C;
+    --ink:#E9E4D6;
+    --ink-dim:#B7C2B7;
+    --muted:#7C9385;
+    --line:#28392E;
+    --gold:#C9A227;
+    --gold-dim:#8C7420;
+    --danger:#D9694F;
+    --danger-dim:#5A2E24;
+    --safe:#5B8C6E;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Inter',system-ui,sans-serif;
+    padding:20px 14px 60px;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:900px;margin:0 auto;}
+
+  /* Header */
+  .eyebrow{
+    font-family:'Space Mono',monospace;
+    font-size:11px;
+    letter-spacing:0.16em;
+    text-transform:uppercase;
+    color:var(--gold);
+    margin-bottom:6px;
+  }
+  h1{
+    font-family:'Space Mono',monospace;
+    font-size:28px;
+    font-weight:700;
+    margin:0 0 4px;
+    letter-spacing:-0.01em;
+  }
+  .subhead{
+    color:var(--ink-dim);
+    font-size:13.5px;
+    margin-bottom:22px;
+  }
+
+  /* Summary cards */
+  .summary{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:1px;
+    background:var(--line);
+    border:1px solid var(--line);
+    border-radius:10px;
+    overflow:hidden;
+    margin-bottom:18px;
+  }
+  .stat{
+    background:var(--surface);
+    padding:14px 12px;
+  }
+  .stat .label{
+    font-size:10.5px;
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+    color:var(--muted);
+    margin-bottom:6px;
+  }
+  .stat .value{
+    font-family:'Space Mono',monospace;
+    font-size:19px;
+    font-weight:700;
+  }
+  .stat .value.danger{color:var(--danger);}
+  .stat .value.gold{color:var(--gold);}
+  .stat .sub{font-size:11px;color:var(--ink-dim);margin-top:3px;}
+
+  @media (max-width:640px){
+    .summary{grid-template-columns:repeat(2,1fr);}
+  }
+
+  /* Chart */
+  .chart-card{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:16px 14px 10px;
+    margin-bottom:22px;
+  }
+  .chart-card .cap{
+    font-size:11px;
+    color:var(--muted);
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+    margin-bottom:8px;
+  }
+  svg{display:block;width:100%;height:auto;}
+  .zeroline{stroke:var(--muted);stroke-width:1;stroke-dasharray:3 3;}
+  .balanceline{stroke:var(--gold);stroke-width:2;fill:none;}
+  .fillpos{fill:rgba(201,162,39,0.10);}
+  .fillneg{fill:rgba(217,105,79,0.22);}
+  .lowdot{fill:var(--danger);}
+
+  /* Controls row */
+  .controls{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    margin-bottom:18px;
+    align-items:flex-end;
+  }
+  .field{display:flex;flex-direction:column;gap:4px;}
+  .field label{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;}
+  .field input{
+    background:var(--surface-2);
+    border:1px solid var(--line);
+    color:var(--ink);
+    font-family:'Space Mono',monospace;
+    font-size:13px;
+    padding:8px 10px;
+    border-radius:6px;
+    width:120px;
+  }
+  .field input:focus{outline:2px solid var(--gold-dim);outline-offset:1px;}
+
+  /* Section headers */
+  h2{
+    font-family:'Space Mono',monospace;
+    font-size:13px;
+    text-transform:uppercase;
+    letter-spacing:0.1em;
+    color:var(--muted);
+    margin:26px 0 10px;
+    padding-bottom:8px;
+    border-bottom:1px solid var(--line);
+  }
+
+  /* Ledger table */
+  .ledger{
+    border:1px solid var(--line);
+    border-radius:10px;
+    overflow:hidden;
+  }
+  .row{
+    display:grid;
+    grid-template-columns:44px 1fr 100px 110px 32px;
+    gap:8px;
+    align-items:center;
+    padding:9px 10px;
+    background:var(--surface);
+    border-bottom:1px solid var(--line);
+    font-size:13px;
+  }
+  .row.head{
+    background:var(--surface-3);
+    font-family:'Space Mono',monospace;
+    font-size:10px;
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+    color:var(--muted);
+    padding:8px 10px;
+  }
+  .row:last-child{border-bottom:none;}
+  .row.altbg{background:var(--surface-2);}
+  .row.negative{box-shadow:inset 3px 0 0 var(--danger);}
+  .row.flagged{box-shadow:inset 3px 0 0 var(--gold);}
+  .row input[type="number"], .row input[type="text"]{
+    background:transparent;
+    border:1px solid transparent;
+    color:var(--ink);
+    font-family:'Space Mono',monospace;
+    font-size:13px;
+    padding:5px 6px;
+    border-radius:5px;
+    width:100%;
+  }
+  .row input[type="text"]{font-family:'Inter',sans-serif;}
+  .row input:hover{border-color:var(--line);}
+  .row input:focus{border-color:var(--gold-dim);outline:none;background:var(--surface-2);}
+  .day-cell{font-family:'Space Mono',monospace;color:var(--ink-dim);font-size:12.5px;text-align:center;}
+  .bal-cell{font-family:'Space Mono',monospace;text-align:right;font-size:13px;}
+  .bal-cell.neg{color:var(--danger);font-weight:700;}
+  .amt-cell input{text-align:right;}
+  .del-btn{
+    background:none;border:none;color:var(--muted);cursor:pointer;
+    font-size:15px;line-height:1;padding:4px;
+  }
+  .del-btn:hover{color:var(--danger);}
+  .chk{width:16px;height:16px;accent-color:var(--gold);cursor:pointer;}
+  .tag{
+    font-size:9.5px;
+    font-family:'Space Mono',monospace;
+    color:var(--gold);
+    border:1px solid var(--gold-dim);
+    border-radius:4px;
+    padding:1px 4px;
+    margin-left:5px;
+    white-space:nowrap;
+  }
+
+  .add-row{
+    display:flex;
+    justify-content:center;
+    padding:10px;
+    background:var(--surface);
+  }
+  .add-btn{
+    background:var(--surface-2);
+    border:1px dashed var(--line);
+    color:var(--ink-dim);
+    font-family:'Space Mono',monospace;
+    font-size:12px;
+    padding:7px 16px;
+    border-radius:6px;
+    cursor:pointer;
+  }
+  .add-btn:hover{border-color:var(--gold-dim);color:var(--gold);}
+
+  .note{
+    font-size:12px;
+    color:var(--muted);
+    margin-top:10px;
+    line-height:1.5;
+  }
+  .note b{color:var(--ink-dim);}
+
+  .footer-actions{
+    display:flex;
+    gap:10px;
+    margin-top:26px;
+    justify-content:flex-end;
+  }
+  .ghost-btn{
+    background:transparent;
+    border:1px solid var(--line);
+    color:var(--ink-dim);
+    font-family:'Space Mono',monospace;
+    font-size:11.5px;
+    padding:7px 14px;
+    border-radius:6px;
+    cursor:pointer;
+  }
+  .ghost-btn:hover{border-color:var(--danger);color:var(--danger);}
+  .save-indicator{
+    font-family:'Space Mono',monospace;
+    font-size:10.5px;
+    color:var(--muted);
+    align-self:center;
+    margin-right:auto;
+    opacity:0;
+    transition:opacity 0.3s;
+  }
+  .save-indicator.show{opacity:1;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="eyebrow">Daniel · Pay period Jul 2 – Jul 30</div>
+  <h1>July Ledger</h1>
+  <div class="subhead">Every entry is editable — amounts, days, and whether it's even happening yet. Uncheck anything you're not sure about and see the balance recalculate.</div>
+
+  <div class="summary" id="summaryCards"></div>
+
+  <div class="chart-card">
+    <div class="cap">Balance across the month</div>
+    <svg id="chartSvg" viewBox="0 0 800 180" preserveAspectRatio="none"></svg>
+  </div>
+
+  <div class="controls">
+    <div class="field">
+      <label>Starting balance (Jul 1)</label>
+      <input type="number" step="0.01" id="startBalance">
+    </div>
+    <div class="field">
+      <label>Paycheck amount</label>
+      <input type="number" step="0.01" id="payAmount">
+    </div>
+    <div class="field">
+      <label>Pay days (Jul)</label>
+      <input type="text" id="payDays" placeholder="2,16,30">
+    </div>
+  </div>
+
+  <h2>Income</h2>
+  <div class="ledger" id="incomeLedger"></div>
+
+  <h2>Expenses</h2>
+  <div class="ledger" id="expenseLedger"></div>
+
+  <div class="note">
+    <b>Amber-tagged rows</b> are ones you didn't give me a firm number or date for (the 3rd Affirm payment, the second gas fill-up, the exact rent day) — I made a reasonable guess. Fix them and everything downstream recalculates. <b>Unchecking</b> a row removes it from the math without deleting it, so you can test "what if I skip Amazon this cycle."
+  </div>
+
+  <div class="footer-actions">
+    <span class="save-indicator" id="saveIndicator">saved</span>
+    <button class="ghost-btn" id="resetBtn">Reset to defaults</button>
+  </div>
+
+</div>
+
+<script>
+const STORAGE_KEY = 'july2026-budget-v1';
+
+function defaultData(){
+  return {
+    startBalance: 177.09,
+    payAmount: 1581.00,
+    payDays: [2,16,30],
+    expenses: [
+      {id:'e1', day:3, label:'Rent', amount:1850.00, included:true, flag:'flex', note:'first week, exact day varies'},
+      {id:'e2', day:4, label:'Navy Federal Credit', amount:250.00, included:true, flag:''},
+      {id:'e3', day:5, label:'EZ Pass', amount:110.00, included:true, flag:''},
+      {id:'e4', day:6, label:'Gas (car)', amount:72.50, included:true, flag:'flex', note:'ranges $65-80'},
+      {id:'e5', day:8, label:'Affirm payment', amount:244.00, included:true, flag:''},
+      {id:'e6', day:8, label:'AT&T', amount:77.45, included:true, flag:''},
+      {id:'e7', day:8, label:'Amazon', amount:126.00, included:true, flag:''},
+      {id:'e8', day:8, label:'Gas bill (utility)', amount:49.00, included:true, flag:''},
+      {id:'e9', day:12, label:'Spotify', amount:13.77, included:true, flag:''},
+      {id:'e10', day:13, label:'Affirm payment #2', amount:66.36, included:true, flag:'flex', note:'day approximate'},
+      {id:'e11', day:17, label:'Car insurance', amount:87.47, included:true, flag:''},
+      {id:'e12', day:18, label:'Klarna', amount:24.25, included:true, flag:''},
+      {id:'e13', day:19, label:'Gas (car) #2', amount:72.50, included:true, flag:'flex', note:'ranges $65-80'},
+      {id:'e14', day:22, label:'Dropbox', amount:12.71, included:true, flag:''},
+      {id:'e15', day:23, label:'SoFi student loan', amount:179.58, included:true, flag:''},
+      {id:'e16', day:24, label:'Affirm payment #3', amount:66.36, included:true, flag:'unsure', note:'amount not confirmed — check this one'},
+      {id:'e17', day:29, label:'Comcast', amount:50.00, included:true, flag:''},
+      {id:'e18', day:29, label:'Car payment', amount:228.00, included:true, flag:''},
+      {id:'e19', day:31, label:'Misc / everyday purchases', amount:265.00, included:false, flag:'flex', note:'last month\\'s total — toggle on to plan for it this month'}
+    ],
+    debts: [
+      {id:'d1', label:'Affirm', balance:694.95},
+      {id:'d2', label:'Klarna', balance:72.75},
+      {id:'d3', label:'PayPal Credit', balance:74.65},
+      {id:'d4', label:'Amazon Credit Card', balance:1493.58},
+      {id:'d5', label:"Lowe's", balance:473.52},
+      {id:'d6', label:'Navy Federal Credit Card', balance:22033.73},
+      {id:'d7', label:'Navy Federal Loan', balance:4935.94},
+      {id:'d8', label:'American Heritage Credit Card', balance:2732.25}
+    ]
+  };
+}
+
+let data = null;
+
+async function loadData(){
+  try{
+    const res = await window.storage.get(STORAGE_KEY, false);
+    if(res && res.value){
+      data = JSON.parse(res.value);
+      return;
+    }
+  }catch(e){ /* not found yet */ }
+  data = defaultData();
+}
+
+let saveTimeout;
+function saveData(){
+  clearTimeout(saveTimeout);
+  saveTimeout = setTimeout(async ()=>{
+    try{
+      await window.storage.set(STORAGE_KEY, JSON.stringify(data), false);
+      const ind = document.getElementById('saveIndicator');
+      ind.textContent = 'saved';
+      ind.classList.add('show');
+      setTimeout(()=>ind.classList.remove('show'), 1200);
+    }catch(e){
+      console.error('save failed', e);
+    }
+  }, 400);
+}
+
+function fmt(n){
+  const neg = n < 0;
+  const abs = Math.abs(n).toFixed(2);
+  return (neg ? '-$' : '$') + abs;
+}
+
+function parsePayDays(){
+  return (document.getElementById('payDays').value || '')
+    .split(',').map(s=>parseInt(s.trim(),10)).filter(n=>!isNaN(n) && n>=1 && n<=31);
+}
+
+function computeBalances(){
+  const days = 31;
+  const net = new Array(days+1).fill(0); // index 1..31
+  const payDays = data.payDays;
+  payDays.forEach(d=>{
+    if(d>=1 && d<=31) net[d] += data.payAmount;
+  });
+  data.expenses.forEach(e=>{
+    if(e.included && e.day>=1 && e.day<=31){
+      net[e.day] -= e.amount;
+    }
+  });
+  const balances = new Array(days+1).fill(0);
+  let running = data.startBalance;
+  for(let d=1; d<=days; d++){
+    running += net[d];
+    balances[d] = running;
+  }
+  return balances;
+}
+
+function render(){
+  // sync controls
+  document.getElementById('startBalance').value = data.startBalance;
+  document.getElementById('payAmount').value = data.payAmount;
+  document.getElementById('payDays').value = data.payDays.join(',');
+
+  const balances = computeBalances();
+
+  // Summary
+  let lowestDay = 1, lowestVal = balances[1];
+  for(let d=1; d<=31; d++){
+    if(balances[d] < lowestVal){ lowestVal = balances[d]; lowestDay = d; }
+  }
+  const totalIncome = data.payDays.length * data.payAmount;
+  const totalExpenses = data.expenses.filter(e=>e.included).reduce((s,e)=>s+e.amount,0);
+  const endBalance = balances[31];
+
+  const summaryEl = document.getElementById('summaryCards');
+  summaryEl.innerHTML = `
+    <div class="stat">
+      <div class="label">Lowest point</div>
+      <div class="value ${lowestVal<0?'danger':(lowestVal<100?'gold':'')}">${fmt(lowestVal)}</div>
+      <div class="sub">Jul ${lowestDay}</div>
+    </div>
+    <div class="stat">
+      <div class="label">End of month</div>
+      <div class="value ${endBalance<0?'danger':'gold'}">${fmt(endBalance)}</div>
+      <div class="sub">Jul 31</div>
+    </div>
+    <div class="stat">
+      <div class="label">Total income</div>
+      <div class="value">${fmt(totalIncome)}</div>
+      <div class="sub">${data.payDays.length} paycheck${data.payDays.length!==1?'s':''}</div>
+    </div>
+    <div class="stat">
+      <div class="label">Total expenses</div>
+      <div class="value">${fmt(totalExpenses)}</div>
+      <div class="sub">${data.expenses.filter(e=>e.included).length} active items</div>
+    </div>
+  `;
+
+  renderChart(balances, lowestDay);
+  renderIncome();
+  renderExpenses(balances);
+}
+
+function renderChart(balances, lowestDay){
+  const W = 800, H = 180, pad = 10;
+  const vals = balances.slice(1);
+  const maxV = Math.max(...vals, 0);
+  const minV = Math.min(...vals, 0);
+  const range = (maxV - minV) || 1;
+  const yFor = v => H - pad - ((v - minV) / range) * (H - pad*2);
+  const xFor = d => pad + ((d-1) / 30) * (W - pad*2);
+  const zeroY = yFor(0);
+
+  let path = '';
+  let areaPath = '';
+  for(let d=1; d<=31; d++){
+    const x = xFor(d), y = yFor(balances[d]);
+    path += (d===1 ? 'M' : 'L') + x.toFixed(1) + ',' + y.toFixed(1) + ' ';
+  }
+  areaPath = 'M' + xFor(1) + ',' + zeroY + ' ';
+  for(let d=1; d<=31; d++){
+    areaPath += 'L' + xFor(d).toFixed(1) + ',' + yFor(balances[d]).toFixed(1) + ' ';
+  }
+  areaPath += 'L' + xFor(31) + ',' + zeroY + ' Z';
+
+  const lowX = xFor(lowestDay), lowY = yFor(balances[lowestDay]);
+  const hasNegative = minV < 0;
+
+  const svg = document.getElementById('chartSvg');
+  svg.innerHTML = `
+    <defs>
+      <clipPath id="clipAbove"><rect x="0" y="0" width="${W}" height="${zeroY}"/></clipPath>
+      <clipPath id="clipBelow"><rect x="0" y="${zeroY}" width="${W}" height="${H-zeroY}"/></clipPath>
+    </defs>
+    <path d="${areaPath}" class="fillpos" clip-path="url(#clipAbove)"/>
+    <path d="${areaPath}" class="fillneg" clip-path="url(#clipBelow)"/>
+    <line x1="0" y1="${zeroY.toFixed(1)}" x2="${W}" y2="${zeroY.toFixed(1)}" class="zeroline"/>
+    <path d="${path}" class="balanceline"/>
+    <circle cx="${lowX.toFixed(1)}" cy="${lowY.toFixed(1)}" r="4" class="lowdot"/>
+  `;
+}
+
+function renderIncome(){
+  const el = document.getElementById('incomeLedger');
+  let html = `<div class="row head"><div>Day</div><div>Source</div><div>Amount</div><div></div><div></div></div>`;
+  data.payDays.forEach((d, idx)=>{
+    html += `
+      <div class="row">
+        <div class="day-cell">${d}</div>
+        <div>Paycheck</div>
+        <div class="amt-cell"><input type="number" step="0.01" value="${data.payAmount}" onchange="updatePayAmount(this.value)"></div>
+        <div></div>
+        <div></div>
+      </div>`;
+  });
+  el.innerHTML = html;
+}
+
+function renderExpenses(balances){
+  const el = document.getElementById('expenseLedger');
+  const sorted = [...data.expenses].sort((a,b)=>a.day-b.day);
+  let html = `<div class="row head"><div>Day</div><div>Item</div><div>Amount</div><div>Bal.</div><div></div></div>`;
+  sorted.forEach((e, i)=>{
+    const bal = balances[e.day];
+    const rowClasses = ['row'];
+    if(i % 2 === 1) rowClasses.push('altbg');
+    if(e.included && bal < 0) rowClasses.push('negative');
+    if(e.flag) rowClasses.push('flagged');
+    const tag = e.flag === 'unsure' ? '<span class="tag" title="'+ (e.note||'') +'">check</span>'
+              : e.flag === 'flex' ? '<span class="tag" title="'+ (e.note||'') +'">flex</span>' : '';
+    html += `
+      <div class="${rowClasses.join(' ')}">
+        <div><input type="number" min="1" max="31" value="${e.day}" style="text-align:center" onchange="updateExpense('${e.id}','day',this.value)"></div>
+        <div style="display:flex;align-items:center;">
+          <input type="text" value="${e.label}" onchange="updateExpense('${e.id}','label',this.value)">${tag}
+        </div>
+        <div class="amt-cell"><input type="number" step="0.01" value="${e.amount}" onchange="updateExpense('${e.id}','amount',this.value)"></div>
+        <div class="bal-cell ${bal<0?'neg':''}">${e.included ? fmt(bal) : '—'}</div>
+        <div style="display:flex;align-items:center;gap:4px;">
+          <input type="checkbox" class="chk" ${e.included?'checked':''} onchange="updateExpense('${e.id}','included',this.checked)" title="Include in totals">
+          <button class="del-btn" onclick="deleteExpense('${e.id}')" title="Remove">×</button>
+        </div>
+      </div>`;
+  });
+  html += `<div class="add-row"><button class="add-btn" onclick="addExpense()">+ add expense</button></div>`;
+  el.innerHTML = html;
+}
+
+function updatePayAmount(val){
+  data.payAmount = parseFloat(val) || 0;
+  saveData(); render();
+}
+
+function updateExpense(id, field, val){
+  const e = data.expenses.find(x=>x.id===id);
+  if(!e) return;
+  if(field === 'day') e.day = Math.min(31, Math.max(1, parseInt(val,10) || 1));
+  else if(field === 'amount') e.amount = parseFloat(val) || 0;
+  else if(field === 'included') e.included = val;
+  else if(field === 'label') e.label = val;
+  saveData(); render();
+}
+
+function deleteExpense(id){
+  data.expenses = data.expenses.filter(x=>x.id!==id);
+  saveData(); render();
+}
+
+function addExpense(){
+  const id = 'e' + Date.now();
+  data.expenses.push({id, day:15, label:'New item', amount:0, included:true, flag:''});
+  saveData(); render();
+}
+
+document.getElementById('startBalance').addEventListener('change', function(){
+  data.startBalance = parseFloat(this.value) || 0;
+  saveData(); render();
+});
+document.getElementById('payAmount').addEventListener('change', function(){
+  data.payAmount = parseFloat(this.value) || 0;
+  saveData(); render();
+});
+document.getElementById('payDays').addEventListener('change', function(){
+  data.payDays = parsePayDays();
+  saveData(); render();
+});
+document.getElementById('resetBtn').addEventListener('click', async function(){
+  data = defaultData();
+  saveData(); render();
+});
+
+(async function init(){
+  await loadData();
+  render();
+})();
+</script>
+</body>
+</html>
