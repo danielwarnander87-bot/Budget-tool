@@ -21,6 +21,7 @@
     --danger:#D9694F;
     --danger-dim:#5A2E24;
     --safe:#5B8C6E;
+    --test:#5B9FD9;
   }
   *{box-sizing:border-box;}
   body{
@@ -54,11 +55,30 @@
     font-size:13.5px;
     margin-bottom:22px;
   }
+  .titlebar{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    margin-top:4px;
+  }
+  .nav-btn{
+    background:var(--surface-2);
+    border:1px solid var(--line);
+    color:var(--ink-dim);
+    width:34px;
+    height:34px;
+    min-width:34px;
+    border-radius:8px;
+    font-size:18px;
+    line-height:1;
+    cursor:pointer;
+  }
+  .nav-btn:hover{border-color:var(--gold-dim);color:var(--gold);}
 
   /* Summary cards */
   .summary{
     display:grid;
-    grid-template-columns:repeat(4,1fr);
+    grid-template-columns:repeat(5,1fr);
     gap:1px;
     background:var(--line);
     border:1px solid var(--line);
@@ -108,9 +128,21 @@
   svg{display:block;width:100%;height:auto;}
   .zeroline{stroke:var(--muted);stroke-width:1;stroke-dasharray:3 3;}
   .balanceline{stroke:var(--gold);stroke-width:2;fill:none;}
+  .testline{stroke:var(--test);stroke-width:2;stroke-dasharray:5 3;fill:none;}
   .fillpos{fill:rgba(201,162,39,0.10);}
   .fillneg{fill:rgba(217,105,79,0.22);}
   .lowdot{fill:var(--danger);}
+  .chart-legend{
+    display:flex;
+    gap:16px;
+    margin-top:8px;
+    font-size:11px;
+    color:var(--ink-dim);
+  }
+  .chart-legend span{display:flex;align-items:center;gap:6px;}
+  .swatch{width:14px;height:2px;display:inline-block;}
+  .swatch.gold{background:var(--gold);}
+  .swatch.blue{background:var(--test);border-top:1px dashed var(--test);height:0;}
 
   /* Controls row */
   .controls{
@@ -267,20 +299,35 @@
 <body>
 <div class="wrap">
 
-  <div class="eyebrow">Daniel · Pay period Jul 2 – Jul 30</div>
-  <h1>July Ledger</h1>
+  <div class="titlebar">
+    <button class="nav-btn" id="prevMonthBtn" title="Previous month">‹</button>
+    <div style="flex:1;">
+      <div class="eyebrow" id="eyebrowText">Daniel · Pay period —</div>
+      <h1 id="titleText">Ledger</h1>
+    </div>
+    <button class="nav-btn" id="nextMonthBtn" title="Next month">›</button>
+  </div>
   <div class="subhead">Every entry is editable — amounts, days, and whether it's even happening yet. Uncheck anything you're not sure about and see the balance recalculate.</div>
 
   <div class="summary" id="summaryCards"></div>
 
   <div class="chart-card">
     <div class="cap">Balance across the month</div>
-    <svg id="chartSvg" viewBox="0 0 800 180" preserveAspectRatio="none"></svg>
+    <svg id="chartSvg" viewBox="0 0 800 190" preserveAspectRatio="none"></svg>
+    <div class="chart-legend" id="chartLegend"></div>
+    <div style="display:flex;align-items:center;gap:10px;margin-top:12px;flex-wrap:wrap;">
+      <div class="field" style="width:auto;">
+        <label>What if I saved up an extra</label>
+        <input type="number" step="0.01" id="testCushion" style="width:110px;">
+      </div>
+      <button class="ghost-btn" id="fillSuggestedBtn" style="margin-bottom:1px;">use suggested amount</button>
+      <button class="ghost-btn" id="clearTestBtn" style="margin-bottom:1px;">clear</button>
+    </div>
   </div>
 
   <div class="controls">
     <div class="field">
-      <label>Starting balance (Jul 1)</label>
+      <label id="startBalanceLabel">Starting balance</label>
       <input type="number" step="0.01" id="startBalance">
     </div>
     <div class="field">
@@ -288,8 +335,8 @@
       <input type="number" step="0.01" id="payAmount">
     </div>
     <div class="field">
-      <label>Pay days (Jul)</label>
-      <input type="text" id="payDays" placeholder="2,16,30">
+      <label>Any known payday</label>
+      <input type="date" id="payAnchor">
     </div>
   </div>
 
@@ -299,8 +346,12 @@
   <h2>Expenses</h2>
   <div class="ledger" id="expenseLedger"></div>
 
+  <h2>Debt Snapshot</h2>
+  <div class="ledger" id="debtLedger"></div>
+  <div class="note" style="margin-bottom:20px;">This section is a balance snapshot only — it doesn't pull from your daily cash flow above. A few of these already show up as monthly payments in the Expenses ledger (Affirm, Klarna, Navy Federal Credit); this is just the total still owed.</div>
+
   <div class="note">
-    <b>Amber-tagged rows</b> are ones you didn't give me a firm number or date for (the 3rd Affirm payment, the second gas fill-up, the exact rent day) — I made a reasonable guess. Fix them and everything downstream recalculates. <b>Unchecking</b> a row removes it from the math without deleting it, so you can test "what if I skip Amazon this cycle."
+    <b>"Save to avoid red"</b> is the minimum extra cushion you'd need sitting in the account at the start of the month to keep your balance at or above $0 the whole way through — it's calculated straight off your lowest point. Add that much (or more, for breathing room) and the red clears. <b>Amber-tagged rows</b> are ones you didn't give me a firm number or date for (the 3rd Affirm payment, the second gas fill-up, the exact rent day) — I made a reasonable guess. Fix them and everything downstream recalculates. <b>Unchecking</b> a row removes it from the math without deleting it, so you can test "what if I skip Amazon this cycle."
   </div>
 
   <div class="footer-actions">
@@ -317,7 +368,8 @@ function defaultData(){
   return {
     startBalance: 177.09,
     payAmount: 1581.00,
-    payDays: [2,16,30],
+    payAnchorDate: '2026-07-02',
+    testCushion: 0,
     expenses: [
       {id:'e1', day:3, label:'Rent', amount:1850.00, included:true, flag:'flex', note:'first week, exact day varies'},
       {id:'e2', day:4, label:'Navy Federal Credit', amount:250.00, included:true, flag:''},
@@ -337,7 +389,7 @@ function defaultData(){
       {id:'e16', day:24, label:'Affirm payment #3', amount:66.36, included:true, flag:'unsure', note:'amount not confirmed — check this one'},
       {id:'e17', day:29, label:'Comcast', amount:50.00, included:true, flag:''},
       {id:'e18', day:29, label:'Car payment', amount:228.00, included:true, flag:''},
-      {id:'e19', day:31, label:'Misc / everyday purchases', amount:265.00, included:false, flag:'flex', note:'last month\\'s total — toggle on to plan for it this month'}
+      {id:'e19', day:31, label:'Misc / everyday purchases', amount:265.00, included:false, flag:'flex', note:"last month's total — toggle on to plan for it this month"}
     ],
     debts: [
       {id:'d1', label:'Affirm', balance:694.95},
@@ -359,6 +411,9 @@ async function loadData(){
     const res = await window.storage.get(STORAGE_KEY, false);
     if(res && res.value){
       data = JSON.parse(res.value);
+      if(!data.debts) data.debts = defaultData().debts;
+      if(!data.payAnchorDate){ data.payAnchorDate = '2026-07-02'; delete data.payDays; }
+      if(typeof data.testCushion !== 'number') data.testCushion = 0;
       return;
     }
   }catch(e){ /* not found yet */ }
@@ -387,26 +442,47 @@ function fmt(n){
   return (neg ? '-$' : '$') + abs;
 }
 
-function parsePayDays(){
-  return (document.getElementById('payDays').value || '')
-    .split(',').map(s=>parseInt(s.trim(),10)).filter(n=>!isNaN(n) && n>=1 && n<=31);
+const WEEKDAY_SHORT = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const WEEKDAY_LETTER = ['S','M','T','W','T','F','S'];
+
+function daysInMonth(year, month){
+  return new Date(year, month+1, 0).getDate();
+}
+function monthNameFull(year, month){
+  return new Date(year, month, 1).toLocaleString('en-US', {month:'long'});
+}
+function monthAbbrev(year, month){
+  return new Date(year, month, 1).toLocaleString('en-US', {month:'short'});
+}
+function weekdayFor(year, month, day, dim){
+  const d = Math.min(Math.max(day,1), dim);
+  return new Date(year, month, d).getDay();
+}
+function getPayDaysForMonth(year, month){
+  const anchor = new Date(data.payAnchorDate + 'T00:00:00');
+  const dim = daysInMonth(year, month);
+  const result = [];
+  for(let day=1; day<=dim; day++){
+    const d = new Date(year, month, day);
+    const diffDays = Math.round((d - anchor) / 86400000);
+    if(((diffDays % 14) + 14) % 14 === 0) result.push(day);
+  }
+  return result;
 }
 
-function computeBalances(){
-  const days = 31;
-  const net = new Array(days+1).fill(0); // index 1..31
-  const payDays = data.payDays;
+function computeBalances(year, month, payDays){
+  const dim = daysInMonth(year, month);
+  const net = new Array(dim+1).fill(0);
   payDays.forEach(d=>{
-    if(d>=1 && d<=31) net[d] += data.payAmount;
+    if(d>=1 && d<=dim) net[d] += data.payAmount;
   });
   data.expenses.forEach(e=>{
-    if(e.included && e.day>=1 && e.day<=31){
-      net[e.day] -= e.amount;
-    }
+    const day = Math.min(Math.max(e.day,1), dim);
+    if(e.included) net[day] -= e.amount;
   });
-  const balances = new Array(days+1).fill(0);
+  const balances = new Array(dim+1).fill(0);
   let running = data.startBalance;
-  for(let d=1; d<=days; d++){
+  for(let d=1; d<=dim; d++){
     running += net[d];
     balances[d] = running;
   }
@@ -414,38 +490,60 @@ function computeBalances(){
 }
 
 function render(){
+  const year = viewYear, month = viewMonth;
+  const dim = daysInMonth(year, month);
+  const payDays = getPayDaysForMonth(year, month);
+  const abbr = monthAbbrev(year, month);
+
+  // header
+  document.getElementById('titleText').textContent = monthNameFull(year, month) + ' Ledger';
+  document.getElementById('eyebrowText').textContent = payDays.length
+    ? `Daniel · Pay period ${abbr} ${payDays[0]} – ${abbr} ${payDays[payDays.length-1]}`
+    : `Daniel · ${monthNameFull(year, month)} ${year}`;
+  document.getElementById('startBalanceLabel').textContent = `Starting balance (${abbr} 1)`;
+
   // sync controls
   document.getElementById('startBalance').value = data.startBalance;
   document.getElementById('payAmount').value = data.payAmount;
-  document.getElementById('payDays').value = data.payDays.join(',');
+  document.getElementById('payAnchor').value = data.payAnchorDate;
+  document.getElementById('testCushion').value = data.testCushion || '';
 
-  const balances = computeBalances();
+  const balances = computeBalances(year, month, payDays);
 
   // Summary
   let lowestDay = 1, lowestVal = balances[1];
-  for(let d=1; d<=31; d++){
+  for(let d=1; d<=dim; d++){
     if(balances[d] < lowestVal){ lowestVal = balances[d]; lowestDay = d; }
   }
-  const totalIncome = data.payDays.length * data.payAmount;
+  const totalIncome = payDays.length * data.payAmount;
   const totalExpenses = data.expenses.filter(e=>e.included).reduce((s,e)=>s+e.amount,0);
-  const endBalance = balances[31];
+  const endBalance = balances[dim];
+  const lowWd = WEEKDAY_SHORT[weekdayFor(year,month,lowestDay,dim)];
+  const endWd = WEEKDAY_SHORT[weekdayFor(year,month,dim,dim)];
+  const cushionNeeded = Math.max(0, -lowestVal);
+  lastCushionNeeded = cushionNeeded;
 
   const summaryEl = document.getElementById('summaryCards');
   summaryEl.innerHTML = `
     <div class="stat">
       <div class="label">Lowest point</div>
       <div class="value ${lowestVal<0?'danger':(lowestVal<100?'gold':'')}">${fmt(lowestVal)}</div>
-      <div class="sub">Jul ${lowestDay}</div>
+      <div class="sub">${abbr} ${lowestDay} · ${lowWd}</div>
+    </div>
+    <div class="stat">
+      <div class="label">Save to avoid red</div>
+      <div class="value ${cushionNeeded>0?'danger':'gold'}">${cushionNeeded>0 ? fmt(cushionNeeded) : '$0'}</div>
+      <div class="sub">${cushionNeeded>0 ? `before ${abbr} ${lowestDay}` : "you're covered"}</div>
     </div>
     <div class="stat">
       <div class="label">End of month</div>
       <div class="value ${endBalance<0?'danger':'gold'}">${fmt(endBalance)}</div>
-      <div class="sub">Jul 31</div>
+      <div class="sub">${abbr} ${dim} · ${endWd}</div>
     </div>
     <div class="stat">
       <div class="label">Total income</div>
       <div class="value">${fmt(totalIncome)}</div>
-      <div class="sub">${data.payDays.length} paycheck${data.payDays.length!==1?'s':''}</div>
+      <div class="sub">${payDays.length} paycheck${payDays.length!==1?'s':''}</div>
     </div>
     <div class="stat">
       <div class="label">Total expenses</div>
@@ -454,57 +552,135 @@ function render(){
     </div>
   `;
 
-  renderChart(balances, lowestDay);
-  renderIncome();
-  renderExpenses(balances);
+  renderChart(balances, lowestDay, year, month, dim);
+  renderIncome(payDays, year, month, dim);
+  renderExpenses(balances, year, month, dim);
+  renderDebts();
 }
 
-function renderChart(balances, lowestDay){
-  const W = 800, H = 180, pad = 10;
-  const vals = balances.slice(1);
-  const maxV = Math.max(...vals, 0);
-  const minV = Math.min(...vals, 0);
+function renderDebts(){
+  const el = document.getElementById('debtLedger');
+  const total = data.debts.reduce((s,d)=>s+d.balance,0);
+  let html = `<div class="row head" style="grid-template-columns:1fr 140px 32px;"><div>Account</div><div>Balance</div><div></div></div>`;
+  data.debts.forEach((d, i)=>{
+    html += `
+      <div class="row" style="grid-template-columns:1fr 140px 32px;${i%2===1?'background:var(--surface-2);':''}">
+        <div><input type="text" value="${d.label}" onchange="updateDebt('${d.id}','label',this.value)"></div>
+        <div class="amt-cell"><input type="number" step="0.01" value="${d.balance}" onchange="updateDebt('${d.id}','balance',this.value)"></div>
+        <div><button class="del-btn" onclick="deleteDebt('${d.id}')" title="Remove">×</button></div>
+      </div>`;
+  });
+  html += `
+    <div class="row" style="grid-template-columns:1fr 140px 32px;background:var(--surface-3);font-family:'Space Mono',monospace;font-weight:700;">
+      <div>Total owed</div>
+      <div class="bal-cell">${fmt(total)}</div>
+      <div></div>
+    </div>
+    <div class="add-row"><button class="add-btn" onclick="addDebt()">+ add debt</button></div>`;
+  el.innerHTML = html;
+}
+
+function updateDebt(id, field, val){
+  const d = data.debts.find(x=>x.id===id);
+  if(!d) return;
+  if(field === 'balance') d.balance = parseFloat(val) || 0;
+  else if(field === 'label') d.label = val;
+  saveData(); render();
+}
+
+function deleteDebt(id){
+  data.debts = data.debts.filter(x=>x.id!==id);
+  saveData(); render();
+}
+
+function addDebt(){
+  const id = 'd' + Date.now();
+  data.debts.push({id, label:'New account', balance:0});
+  saveData(); render();
+}
+
+function renderChart(balances, lowestDay, year, month, dim){
+  const W = 800, H = 190, padTop = 10, padBottom = 22, padX = 10;
+  const cushion = data.testCushion || 0;
+  const testBalances = cushion !== 0 ? balances.map(v => v + cushion) : null;
+  const allVals = balances.slice(1).concat(testBalances ? testBalances.slice(1) : []);
+  const maxV = Math.max(...allVals, 0);
+  const minV = Math.min(...allVals, 0);
   const range = (maxV - minV) || 1;
-  const yFor = v => H - pad - ((v - minV) / range) * (H - pad*2);
-  const xFor = d => pad + ((d-1) / 30) * (W - pad*2);
+  const chartH = H - padTop - padBottom;
+  const yFor = v => padTop + chartH - ((v - minV) / range) * chartH;
+  const xFor = d => padX + ((d-1) / (dim-1)) * (W - padX*2);
+  const colW = (W - padX*2) / dim;
   const zeroY = yFor(0);
 
   let path = '';
   let areaPath = '';
-  for(let d=1; d<=31; d++){
+  for(let d=1; d<=dim; d++){
     const x = xFor(d), y = yFor(balances[d]);
     path += (d===1 ? 'M' : 'L') + x.toFixed(1) + ',' + y.toFixed(1) + ' ';
   }
   areaPath = 'M' + xFor(1) + ',' + zeroY + ' ';
-  for(let d=1; d<=31; d++){
+  for(let d=1; d<=dim; d++){
     areaPath += 'L' + xFor(d).toFixed(1) + ',' + yFor(balances[d]).toFixed(1) + ' ';
   }
-  areaPath += 'L' + xFor(31) + ',' + zeroY + ' Z';
+  areaPath += 'L' + xFor(dim) + ',' + zeroY + ' Z';
+
+  let testPath = '';
+  if(testBalances){
+    for(let d=1; d<=dim; d++){
+      const x = xFor(d), y = yFor(testBalances[d]);
+      testPath += (d===1 ? 'M' : 'L') + x.toFixed(1) + ',' + y.toFixed(1) + ' ';
+    }
+  }
 
   const lowX = xFor(lowestDay), lowY = yFor(balances[lowestDay]);
-  const hasNegative = minV < 0;
+
+  // weekend shading + weekday letter ticks
+  let weekendRects = '';
+  let dayLabels = '';
+  for(let d=1; d<=dim; d++){
+    const wd = weekdayFor(year, month, d, dim);
+    const xLeft = padX + (d-1)*colW;
+    if(wd === 0 || wd === 6){
+      weekendRects += `<rect x="${xLeft.toFixed(1)}" y="${padTop}" width="${colW.toFixed(1)}" height="${chartH.toFixed(1)}" fill="rgba(140,147,133,0.07)"/>`;
+    }
+    dayLabels += `<text x="${(xLeft+colW/2).toFixed(1)}" y="${H-8}" font-size="8" font-family="Space Mono, monospace" style="fill:var(--muted)" text-anchor="middle">${WEEKDAY_LETTER[wd]}</text>`;
+  }
 
   const svg = document.getElementById('chartSvg');
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
   svg.innerHTML = `
     <defs>
       <clipPath id="clipAbove"><rect x="0" y="0" width="${W}" height="${zeroY}"/></clipPath>
       <clipPath id="clipBelow"><rect x="0" y="${zeroY}" width="${W}" height="${H-zeroY}"/></clipPath>
     </defs>
+    ${weekendRects}
     <path d="${areaPath}" class="fillpos" clip-path="url(#clipAbove)"/>
     <path d="${areaPath}" class="fillneg" clip-path="url(#clipBelow)"/>
     <line x1="0" y1="${zeroY.toFixed(1)}" x2="${W}" y2="${zeroY.toFixed(1)}" class="zeroline"/>
     <path d="${path}" class="balanceline"/>
+    ${testPath ? `<path d="${testPath}" class="testline"/>` : ''}
     <circle cx="${lowX.toFixed(1)}" cy="${lowY.toFixed(1)}" r="4" class="lowdot"/>
+    ${dayLabels}
   `;
+
+  const legendEl = document.getElementById('chartLegend');
+  legendEl.innerHTML = testBalances
+    ? `<span><span class="swatch gold"></span>Actual</span><span><span class="swatch blue"></span>With +${fmt(cushion)} saved up</span>`
+    : `<span><span class="swatch gold"></span>Actual balance</span>`;
 }
 
-function renderIncome(){
+function renderIncome(payDays, year, month, dim){
   const el = document.getElementById('incomeLedger');
   let html = `<div class="row head"><div>Day</div><div>Source</div><div>Amount</div><div></div><div></div></div>`;
-  data.payDays.forEach((d, idx)=>{
+  if(payDays.length === 0){
+    html += `<div class="row"><div colspan="5" style="grid-column:1/-1;color:var(--muted);">No paydays land in this month based on the anchor date.</div></div>`;
+  }
+  payDays.forEach(d=>{
+    const wd = WEEKDAY_SHORT[weekdayFor(year,month,d,dim)];
     html += `
       <div class="row">
-        <div class="day-cell">${d}</div>
+        <div class="day-cell">${d}<div style="font-size:9px;color:var(--muted);">${wd}</div></div>
         <div>Paycheck</div>
         <div class="amt-cell"><input type="number" step="0.01" value="${data.payAmount}" onchange="updatePayAmount(this.value)"></div>
         <div></div>
@@ -514,12 +690,14 @@ function renderIncome(){
   el.innerHTML = html;
 }
 
-function renderExpenses(balances){
+function renderExpenses(balances, year, month, dim){
   const el = document.getElementById('expenseLedger');
   const sorted = [...data.expenses].sort((a,b)=>a.day-b.day);
   let html = `<div class="row head"><div>Day</div><div>Item</div><div>Amount</div><div>Bal.</div><div></div></div>`;
   sorted.forEach((e, i)=>{
-    const bal = balances[e.day];
+    const clampedDay = Math.min(e.day, dim);
+    const bal = balances[clampedDay];
+    const wd = WEEKDAY_SHORT[weekdayFor(year,month,clampedDay,dim)];
     const rowClasses = ['row'];
     if(i % 2 === 1) rowClasses.push('altbg');
     if(e.included && bal < 0) rowClasses.push('negative');
@@ -528,7 +706,10 @@ function renderExpenses(balances){
               : e.flag === 'flex' ? '<span class="tag" title="'+ (e.note||'') +'">flex</span>' : '';
     html += `
       <div class="${rowClasses.join(' ')}">
-        <div><input type="number" min="1" max="31" value="${e.day}" style="text-align:center" onchange="updateExpense('${e.id}','day',this.value)"></div>
+        <div>
+          <input type="number" min="1" max="31" value="${e.day}" style="text-align:center" onchange="updateExpense('${e.id}','day',this.value)">
+          <div style="font-size:9px;color:var(--muted);text-align:center;margin-top:2px;">${wd}</div>
+        </div>
         <div style="display:flex;align-items:center;">
           <input type="text" value="${e.label}" onchange="updateExpense('${e.id}','label',this.value)">${tag}
         </div>
@@ -578,16 +759,43 @@ document.getElementById('payAmount').addEventListener('change', function(){
   data.payAmount = parseFloat(this.value) || 0;
   saveData(); render();
 });
-document.getElementById('payDays').addEventListener('change', function(){
-  data.payDays = parsePayDays();
+document.getElementById('payAnchor').addEventListener('change', function(){
+  if(this.value){ data.payAnchorDate = this.value; saveData(); render(); }
+});
+document.getElementById('testCushion').addEventListener('input', function(){
+  data.testCushion = parseFloat(this.value) || 0;
+  saveData(); render();
+});
+document.getElementById('fillSuggestedBtn').addEventListener('click', function(){
+  data.testCushion = lastCushionNeeded;
+  saveData(); render();
+});
+document.getElementById('clearTestBtn').addEventListener('click', function(){
+  data.testCushion = 0;
   saveData(); render();
 });
 document.getElementById('resetBtn').addEventListener('click', async function(){
   data = defaultData();
   saveData(); render();
 });
+document.getElementById('prevMonthBtn').addEventListener('click', function(){
+  viewMonth--;
+  if(viewMonth < 0){ viewMonth = 11; viewYear--; }
+  render();
+});
+document.getElementById('nextMonthBtn').addEventListener('click', function(){
+  viewMonth++;
+  if(viewMonth > 11){ viewMonth = 0; viewYear++; }
+  render();
+});
+
+let viewYear, viewMonth;
+let lastCushionNeeded = 0;
 
 (async function init(){
+  const today = new Date();
+  viewYear = today.getFullYear();
+  viewMonth = today.getMonth();
   await loadData();
   render();
 })();
