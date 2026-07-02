@@ -764,6 +764,7 @@ function debtFreeDateLabel(months){
 }
 function renderChart(balances, lowestDay, year, month, dim){
   const W = 800, H = 190, padTop = 10, padBottom = 22, padX = 10;
+  const cushion = data.testCushion || 0;
   const testBalances = cushion !== 0 ? balances.map(v => v + cushion) : null;
   const allVals = balances.slice(1).concat(testBalances ? testBalances.slice(1) : []);
   const maxV = Math.max(...allVals, 0);
