@@ -350,6 +350,26 @@
   <div class="ledger" id="debtLedger"></div>
   <div class="note" style="margin-bottom:20px;">This section is a balance snapshot only — it doesn't pull from your daily cash flow above. A few of these already show up as monthly payments in the Expenses ledger (Affirm, Klarna, Navy Federal Credit); this is just the total still owed.</div>
 
+  <h2>Debt Payoff Plan</h2>
+  <div class="controls" style="margin-bottom:16px;">
+    <div class="field">
+      <label>Extra per month toward debt</label>
+      <input type="number" step="0.01" id="extraMonthly">
+    </div>
+  </div>
+  <div class="summary" id="payoffCards" style="grid-template-columns:repeat(2,1fr);margin-bottom:16px;"></div>
+  <div class="chart-card">
+    <div class="cap">Total debt balance over time</div>
+    <svg id="payoffChartSvg" viewBox="0 0 800 190" preserveAspectRatio="none"></svg>
+    <div class="chart-legend">
+      <span><span class="swatch gold"></span>Avalanche (highest APR first)</span>
+      <span><span class="swatch blue"></span>Snowball (smallest balance first)</span>
+    </div>
+  </div>
+  <div class="note" style="margin-bottom:20px;">
+    <b>Avalanche</b> pays minimums everywhere and throws every extra dollar at your highest-interest balance first — mathematically the cheapest route. <b>Snowball</b> targets your smallest balance first regardless of rate — usually costs a bit more in total interest, but clears accounts fast for momentum. Once any account hits $0, its minimum payment automatically rolls into the extra pool for the next one — that's why the payoff speeds up over time even without adding more money.
+  </div>
+
   <div class="note">
     <b>"Save to avoid red"</b> is the minimum extra cushion you'd need sitting in the account at the start of the month to keep your balance at or above $0 the whole way through — it's calculated straight off your lowest point. Add that much (or more, for breathing room) and the red clears. <b>Amber-tagged rows</b> are ones you didn't give me a firm number or date for (the 3rd Affirm payment, the second gas fill-up, the exact rent day) — I made a reasonable guess. Fix them and everything downstream recalculates. <b>Unchecking</b> a row removes it from the math without deleting it, so you can test "what if I skip Amazon this cycle."
   </div>
@@ -392,15 +412,16 @@ function defaultData(){
       {id:'e19', day:31, label:'Misc / everyday purchases', amount:265.00, included:false, flag:'flex', note:"last month's total — toggle on to plan for it this month"}
     ],
     debts: [
-      {id:'d1', label:'Affirm', balance:694.95},
-      {id:'d2', label:'Klarna', balance:72.75},
-      {id:'d3', label:'PayPal Credit', balance:74.65},
-      {id:'d4', label:'Amazon Credit Card', balance:1493.58},
-      {id:'d5', label:"Lowe's", balance:473.52},
-      {id:'d6', label:'Navy Federal Credit Card', balance:22033.73},
-      {id:'d7', label:'Navy Federal Loan', balance:4935.94},
-      {id:'d8', label:'American Heritage Credit Card', balance:2732.25}
-    ]
+      {id:'d1', label:'Affirm', balance:694.95, apr:12.5, minPayment:376.72, flag:'flex', note:'rate is an average — you said plans run roughly 10–15%'},
+      {id:'d2', label:'Klarna', balance:72.75, apr:0, minPayment:24.25, flag:'unsure', note:'rate not confirmed — many Klarna plans are 0% if on schedule, check yours'},
+      {id:'d3', label:'PayPal Credit', balance:74.65, apr:0, minPayment:25, flag:'unsure', note:'check for a deferred-interest payoff deadline — missing it can trigger retroactive interest'},
+      {id:'d4', label:'Amazon Credit Card', balance:1493.58, apr:29.9, minPayment:35, flag:'unsure', note:'minimum payment is a guess — confirm your actual statement minimum'},
+      {id:'d5', label:"Lowe's", balance:473.52, apr:32, minPayment:25, flag:'unsure', note:'minimum payment is a guess — confirm your actual statement minimum'},
+      {id:'d6', label:'Navy Federal Credit Card', balance:22033.73, apr:13.15, minPayment:250, flag:'', note:''},
+      {id:'d7', label:'Navy Federal Loan', balance:4935.94, apr:16.7, minPayment:150, flag:'unsure', note:'minimum payment is a guess — confirm your actual fixed monthly payment'},
+      {id:'d8', label:'American Heritage Credit Card', balance:2732.25, apr:9.99, minPayment:55, flag:'unsure', note:'minimum payment is a guess — confirm your actual statement minimum'}
+    ],
+    extraMonthly: 0
   };
 }
 
@@ -412,6 +433,19 @@ async function loadData(){
     if(res && res.value){
       data = JSON.parse(res.value);
       if(!data.debts) data.debts = defaultData().debts;
+      else {
+        const defaults = defaultData().debts;
+        data.debts.forEach(d=>{
+          if(typeof d.apr !== 'number'){
+            const match = defaults.find(x=>x.label===d.label);
+            d.apr = match ? match.apr : 15;
+            d.minPayment = match ? match.minPayment : Math.max(25, d.balance*0.02);
+            d.flag = match ? match.flag : 'unsure';
+            d.note = match ? match.note : 'rate/minimum are guesses — please confirm';
+          }
+        });
+      }
+      if(typeof data.extraMonthly !== 'number') data.extraMonthly = 0;
       if(!data.payAnchorDate){ data.payAnchorDate = '2026-07-02'; delete data.payDays; }
       if(typeof data.testCushion !== 'number') data.testCushion = 0;
       return;
@@ -507,6 +541,7 @@ function render(){
   document.getElementById('payAmount').value = data.payAmount;
   document.getElementById('payAnchor').value = data.payAnchorDate;
   document.getElementById('testCushion').value = data.testCushion || '';
+  document.getElementById('extraMonthly').value = data.extraMonthly || '';
 
   const balances = computeBalances(year, month, payDays);
 
@@ -556,24 +591,36 @@ function render(){
   renderIncome(payDays, year, month, dim);
   renderExpenses(balances, year, month, dim);
   renderDebts();
+  renderPayoffPlan();
 }
+
+const DEBT_COLS = '1fr 90px 60px 80px 32px';
 
 function renderDebts(){
   const el = document.getElementById('debtLedger');
   const total = data.debts.reduce((s,d)=>s+d.balance,0);
-  let html = `<div class="row head" style="grid-template-columns:1fr 140px 32px;"><div>Account</div><div>Balance</div><div></div></div>`;
+  const totalMin = data.debts.reduce((s,d)=>s+d.minPayment,0);
+  let html = `<div class="row head" style="grid-template-columns:${DEBT_COLS};"><div>Account</div><div>Balance</div><div>APR</div><div>Min/mo</div><div></div></div>`;
   data.debts.forEach((d, i)=>{
+    const tag = d.flag === 'unsure' ? '<span class="tag" title="'+ (d.note||'') +'">check</span>'
+              : d.flag === 'flex' ? '<span class="tag" title="'+ (d.note||'') +'">flex</span>' : '';
     html += `
-      <div class="row" style="grid-template-columns:1fr 140px 32px;${i%2===1?'background:var(--surface-2);':''}">
-        <div><input type="text" value="${d.label}" onchange="updateDebt('${d.id}','label',this.value)"></div>
+      <div class="row ${d.flag?'flagged':''}" style="grid-template-columns:${DEBT_COLS};${i%2===1?'background:var(--surface-2);':''}">
+        <div style="display:flex;align-items:center;">
+          <input type="text" value="${d.label}" onchange="updateDebt('${d.id}','label',this.value)">${tag}
+        </div>
         <div class="amt-cell"><input type="number" step="0.01" value="${d.balance}" onchange="updateDebt('${d.id}','balance',this.value)"></div>
+        <div class="amt-cell"><input type="number" step="0.01" value="${d.apr}" onchange="updateDebt('${d.id}','apr',this.value)" title="APR %"></div>
+        <div class="amt-cell"><input type="number" step="0.01" value="${d.minPayment}" onchange="updateDebt('${d.id}','minPayment',this.value)" title="Minimum monthly payment"></div>
         <div><button class="del-btn" onclick="deleteDebt('${d.id}')" title="Remove">×</button></div>
       </div>`;
   });
   html += `
-    <div class="row" style="grid-template-columns:1fr 140px 32px;background:var(--surface-3);font-family:'Space Mono',monospace;font-weight:700;">
-      <div>Total owed</div>
+    <div class="row" style="grid-template-columns:${DEBT_COLS};background:var(--surface-3);font-family:'Space Mono',monospace;font-weight:700;">
+      <div>Total</div>
       <div class="bal-cell">${fmt(total)}</div>
+      <div></div>
+      <div class="bal-cell">${fmt(totalMin)}</div>
       <div></div>
     </div>
     <div class="add-row"><button class="add-btn" onclick="addDebt()">+ add debt</button></div>`;
@@ -584,6 +631,8 @@ function updateDebt(id, field, val){
   const d = data.debts.find(x=>x.id===id);
   if(!d) return;
   if(field === 'balance') d.balance = parseFloat(val) || 0;
+  else if(field === 'apr') d.apr = parseFloat(val) || 0;
+  else if(field === 'minPayment') d.minPayment = parseFloat(val) || 0;
   else if(field === 'label') d.label = val;
   saveData(); render();
 }
@@ -595,13 +644,126 @@ function deleteDebt(id){
 
 function addDebt(){
   const id = 'd' + Date.now();
-  data.debts.push({id, label:'New account', balance:0});
+  data.debts.push({id, label:'New account', balance:0, apr:0, minPayment:0, flag:''});
   saveData(); render();
 }
 
+function renderPayoffPlan(){
+  const extra = data.extraMonthly || 0;
+  const avalanche = simulatePayoff(data.debts, extra, 'avalanche');
+  const snowball = simulatePayoff(data.debts, extra, 'snowball');
+
+  const cardsEl = document.getElementById('payoffCards');
+  cardsEl.innerHTML = `
+    <div class="stat">
+      <div class="label">Avalanche — debt-free</div>
+      <div class="value gold">${avalanche.months===null ? '—' : avalanche.months + ' mo'}</div>
+      <div class="sub">${debtFreeDateLabel(avalanche.months)}${avalanche.months!==null ? ' · '+fmt(avalanche.totalInterest)+' interest' : ''}</div>
+    </div>
+    <div class="stat">
+      <div class="label">Snowball — debt-free</div>
+      <div class="value" style="color:var(--test);">${snowball.months===null ? '—' : snowball.months + ' mo'}</div>
+      <div class="sub">${debtFreeDateLabel(snowball.months)}${snowball.months!==null ? ' · '+fmt(snowball.totalInterest)+' interest' : ''}</div>
+    </div>
+  `;
+
+  renderPayoffChart(avalanche.history, snowball.history);
+}
+
+function renderPayoffChart(avalancheHistory, snowballHistory){
+  const W = 800, H = 190, padTop = 10, padBottom = 22, padX = 10;
+  const maxMonths = Math.max(avalancheHistory.length, snowballHistory.length) - 1;
+  const allVals = avalancheHistory.concat(snowballHistory);
+  const maxV = Math.max(...allVals, 0);
+  const chartH = H - padTop - padBottom;
+  const yFor = v => padTop + chartH - (v / (maxV || 1)) * chartH;
+  const xFor = m => padX + (maxMonths > 0 ? (m / maxMonths) * (W - padX*2) : 0);
+
+  function pathFor(hist){
+    let p = '';
+    hist.forEach((v, m)=>{
+      p += (m===0 ? 'M' : 'L') + xFor(m).toFixed(1) + ',' + yFor(v).toFixed(1) + ' ';
+    });
+    return p;
+  }
+
+  const avalanchePath = pathFor(avalancheHistory);
+  const snowballPath = pathFor(snowballHistory);
+
+  let yearTicks = '';
+  for(let m=0; m<=maxMonths; m+=12){
+    const x = xFor(m);
+    yearTicks += `<line x1="${x.toFixed(1)}" y1="${padTop}" x2="${x.toFixed(1)}" y2="${H-padBottom}" stroke="var(--line)" stroke-width="1"/>`;
+    yearTicks += `<text x="${x.toFixed(1)}" y="${H-8}" font-size="9" font-family="Space Mono, monospace" style="fill:var(--muted)" text-anchor="middle">${m===0?'now':'yr '+(m/12)}</text>`;
+  }
+
+  const svg = document.getElementById('payoffChartSvg');
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.innerHTML = `
+    ${yearTicks}
+    <path d="${avalanchePath}" class="balanceline"/>
+    <path d="${snowballPath}" class="testline"/>
+  `;
+}
+
+
+function simulatePayoff(debts, extraMonthly, strategy){
+  const working = debts.map(d=>({id:d.id, label:d.label, balance:d.balance, apr:d.apr, minPayment:d.minPayment}));
+  const order = strategy === 'avalanche'
+    ? [...working].sort((a,b)=> b.apr - a.apr)
+    : [...working].sort((a,b)=> a.balance - b.balance);
+
+  let months = 0;
+  let totalInterest = 0;
+  const MAX_MONTHS = 600;
+  const history = [working.reduce((s,d)=>s+d.balance,0)];
+
+  while(working.some(d=>d.balance > 0.005) && months < MAX_MONTHS){
+    months++;
+    working.forEach(d=>{
+      if(d.balance > 0){
+        const interest = d.balance * (d.apr/100/12);
+        d.balance += interest;
+        totalInterest += interest;
+      }
+    });
+    let freed = 0;
+    working.forEach(d=>{
+      if(d.balance > 0){
+        const pay = Math.min(d.minPayment, d.balance);
+        d.balance -= pay;
+      } else {
+        freed += d.minPayment;
+      }
+    });
+    let pool = extraMonthly + freed;
+    for(const d of order){
+      if(pool <= 0) break;
+      if(d.balance <= 0) continue;
+      const pay = Math.min(pool, d.balance);
+      d.balance -= pay;
+      pool -= pay;
+    }
+    working.forEach(d=>{ if(d.balance < 0.005) d.balance = 0; });
+    history.push(working.reduce((s,d)=>s+d.balance,0));
+  }
+
+  return {
+    months: months >= MAX_MONTHS ? null : months,
+    totalInterest,
+    history,
+    order: order.map(d=>d.label)
+  };
+}
+
+function debtFreeDateLabel(months){
+  if(months === null) return 'not with current payments';
+  const d = new Date();
+  d.setMonth(d.getMonth() + months);
+  return d.toLocaleString('en-US', {month:'long', year:'numeric'});
+}
 function renderChart(balances, lowestDay, year, month, dim){
   const W = 800, H = 190, padTop = 10, padBottom = 22, padX = 10;
-  const cushion = data.testCushion || 0;
   const testBalances = cushion !== 0 ? balances.map(v => v + cushion) : null;
   const allVals = balances.slice(1).concat(testBalances ? testBalances.slice(1) : []);
   const maxV = Math.max(...allVals, 0);
@@ -772,6 +934,10 @@ document.getElementById('fillSuggestedBtn').addEventListener('click', function()
 });
 document.getElementById('clearTestBtn').addEventListener('click', function(){
   data.testCushion = 0;
+  saveData(); render();
+});
+document.getElementById('extraMonthly').addEventListener('input', function(){
+  data.extraMonthly = parseFloat(this.value) || 0;
   saveData(); render();
 });
 document.getElementById('resetBtn').addEventListener('click', async function(){
