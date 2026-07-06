@@ -3,410 +3,969 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Rent Split • July 2026</title>
+<title>July Ledger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Mono:wght@400;700&amp;display=swap');
+  :root{
+    --bg:#0F1913;
+    --surface:#16241C;
+    --surface-2:#1D2E24;
+    --surface-3:#243A2C;
+    --ink:#E9E4D6;
+    --ink-dim:#B7C2B7;
+    --muted:#7C9385;
+    --line:#28392E;
+    --gold:#C9A227;
+    --gold-dim:#8C7420;
+    --danger:#D9694F;
+    --danger-dim:#5A2E24;
+    --safe:#5B8C6E;
+    --test:#5B9FD9;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Inter',system-ui,sans-serif;
+    padding:20px 14px 60px;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:900px;margin:0 auto;}
 
-  :root {
-    --bg: #F8F9F7;
-    --card: #FFFFFF;
-    --ink: #1F2A24;
-    --ink-dim: #5C6B63;
-    --accent: #2E7D5A;
-    --accent-light: #E6F0EA;
-    --gold: #C9A227;
-    --danger: #C94C3D;
-    --line: #E0E4E0;
+  /* Header */
+  .eyebrow{
+    font-family:'Space Mono',monospace;
+    font-size:11px;
+    letter-spacing:0.16em;
+    text-transform:uppercase;
+    color:var(--gold);
+    margin-bottom:6px;
+  }
+  h1{
+    font-family:'Space Mono',monospace;
+    font-size:28px;
+    font-weight:700;
+    margin:0 0 4px;
+    letter-spacing:-0.01em;
+  }
+  .subhead{
+    color:var(--ink-dim);
+    font-size:13.5px;
+    margin-bottom:22px;
+  }
+  .titlebar{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    margin-top:4px;
+  }
+  .nav-btn{
+    background:var(--surface-2);
+    border:1px solid var(--line);
+    color:var(--ink-dim);
+    width:34px;
+    height:34px;
+    min-width:34px;
+    border-radius:8px;
+    font-size:18px;
+    line-height:1;
+    cursor:pointer;
+  }
+  .nav-btn:hover{border-color:var(--gold-dim);color:var(--gold);}
+
+  /* Summary cards */
+  .summary{
+    display:grid;
+    grid-template-columns:repeat(5,1fr);
+    gap:1px;
+    background:var(--line);
+    border:1px solid var(--line);
+    border-radius:10px;
+    overflow:hidden;
+    margin-bottom:18px;
+  }
+  .stat{
+    background:var(--surface);
+    padding:14px 12px;
+  }
+  .stat .label{
+    font-size:10.5px;
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+    color:var(--muted);
+    margin-bottom:6px;
+  }
+  .stat .value{
+    font-family:'Space Mono',monospace;
+    font-size:19px;
+    font-weight:700;
+  }
+  .stat .value.danger{color:var(--danger);}
+  .stat .value.gold{color:var(--gold);}
+  .stat .sub{font-size:11px;color:var(--ink-dim);margin-top:3px;}
+
+  @media (max-width:640px){
+    .summary{grid-template-columns:repeat(2,1fr);}
   }
 
-  * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    background: var(--bg);
-    color: var(--ink);
-    font-family: 'Inter', system_ui, sans-serif;
-    padding: 20px 16px 60px;
-    line-height: 1.5;
+  /* Chart */
+  .chart-card{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:16px 14px 10px;
+    margin-bottom:22px;
+  }
+  .chart-card .cap{
+    font-size:11px;
+    color:var(--muted);
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+    margin-bottom:8px;
+  }
+  svg{display:block;width:100%;height:auto;}
+  .zeroline{stroke:var(--muted);stroke-width:1;stroke-dasharray:3 3;}
+  .balanceline{stroke:var(--gold);stroke-width:2;fill:none;}
+  .testline{stroke:var(--test);stroke-width:2;stroke-dasharray:5 3;fill:none;}
+  .fillpos{fill:rgba(201,162,39,0.10);}
+  .fillneg{fill:rgba(217,105,79,0.22);}
+  .lowdot{fill:var(--danger);}
+  .chart-legend{
+    display:flex;
+    gap:16px;
+    margin-top:8px;
+    font-size:11px;
+    color:var(--ink-dim);
+  }
+  .chart-legend span{display:flex;align-items:center;gap:6px;}
+  .swatch{width:14px;height:2px;display:inline-block;}
+  .swatch.gold{background:var(--gold);}
+  .swatch.blue{background:var(--test);border-top:1px dashed var(--test);height:0;}
+
+  /* Controls row */
+  .controls{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    margin-bottom:18px;
+    align-items:flex-end;
+  }
+  .field{display:flex;flex-direction:column;gap:4px;}
+  .field label{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;}
+  .field input{
+    background:var(--surface-2);
+    border:1px solid var(--line);
+    color:var(--ink);
+    font-family:'Space Mono',monospace;
+    font-size:13px;
+    padding:8px 10px;
+    border-radius:6px;
+    width:120px;
+  }
+  .field input:focus{outline:2px solid var(--gold-dim);outline-offset:1px;}
+
+  /* Section headers */
+  h2{
+    font-family:'Space Mono',monospace;
+    font-size:13px;
+    text-transform:uppercase;
+    letter-spacing:0.1em;
+    color:var(--muted);
+    margin:26px 0 10px;
+    padding-bottom:8px;
+    border-bottom:1px solid var(--line);
   }
 
-  .wrap { max-width: 720px; margin: 0 auto; }
-
-  h1 {
-    font-family: 'Space Mono', monospace;
-    font-size: 26px;
-    margin: 0 0 6px;
-    color: var(--ink);
+  /* Ledger table */
+  .ledger{
+    border:1px solid var(--line);
+    border-radius:10px;
+    overflow:hidden;
+  }
+  .row{
+    display:grid;
+    grid-template-columns:44px 1fr 100px 110px 32px;
+    gap:8px;
+    align-items:center;
+    padding:9px 10px;
+    background:var(--surface);
+    border-bottom:1px solid var(--line);
+    font-size:13px;
+  }
+  .row.head{
+    background:var(--surface-3);
+    font-family:'Space Mono',monospace;
+    font-size:10px;
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+    color:var(--muted);
+    padding:8px 10px;
+  }
+  .row:last-child{border-bottom:none;}
+  .row.altbg{background:var(--surface-2);}
+  .row.negative{box-shadow:inset 3px 0 0 var(--danger);}
+  .row.flagged{box-shadow:inset 3px 0 0 var(--gold);}
+  .row input[type="number"], .row input[type="text"]{
+    background:transparent;
+    border:1px solid transparent;
+    color:var(--ink);
+    font-family:'Space Mono',monospace;
+    font-size:13px;
+    padding:5px 6px;
+    border-radius:5px;
+    width:100%;
+  }
+  .row input[type="text"]{font-family:'Inter',sans-serif;}
+  .row input:hover{border-color:var(--line);}
+  .row input:focus{border-color:var(--gold-dim);outline:none;background:var(--surface-2);}
+  .day-cell{font-family:'Space Mono',monospace;color:var(--ink-dim);font-size:12.5px;text-align:center;}
+  .bal-cell{font-family:'Space Mono',monospace;text-align:right;font-size:13px;}
+  .bal-cell.neg{color:var(--danger);font-weight:700;}
+  .amt-cell input{text-align:right;}
+  .del-btn{
+    background:none;border:none;color:var(--muted);cursor:pointer;
+    font-size:15px;line-height:1;padding:4px;
+  }
+  .del-btn:hover{color:var(--danger);}
+  .chk{width:16px;height:16px;accent-color:var(--gold);cursor:pointer;}
+  .tag{
+    font-size:9.5px;
+    font-family:'Space Mono',monospace;
+    color:var(--gold);
+    border:1px solid var(--gold-dim);
+    border-radius:4px;
+    padding:1px 4px;
+    margin-left:5px;
+    white-space:nowrap;
   }
 
-  .subtitle {
-    color: var(--ink-dim);
-    font-size: 14px;
-    margin-bottom: 24px;
+  .add-row{
+    display:flex;
+    justify-content:center;
+    padding:10px;
+    background:var(--surface);
   }
-
-  /* Big top cards */
-  .rent-header {
-    background: white;
-    border: 1px solid var(--line);
-    border-radius: 16px;
-    padding: 20px;
-    margin-bottom: 24px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  .add-btn{
+    background:var(--surface-2);
+    border:1px dashed var(--line);
+    color:var(--ink-dim);
+    font-family:'Space Mono',monospace;
+    font-size:12px;
+    padding:7px 16px;
+    border-radius:6px;
+    cursor:pointer;
   }
+  .add-btn:hover{border-color:var(--gold-dim);color:var(--gold);}
 
-  .rent-header h2 {
-    margin: 0 0 16px;
-    font-size: 15px;
-    font-weight: 600;
-    color: var(--accent);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+  .note{
+    font-size:12px;
+    color:var(--muted);
+    margin-top:10px;
+    line-height:1.5;
   }
+  .note b{color:var(--ink-dim);}
 
-  .split-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
+  .footer-actions{
+    display:flex;
+    gap:10px;
+    margin-top:26px;
+    justify-content:flex-end;
   }
-
-  .split-card {
-    background: #F8F9F7;
-    border-radius: 12px;
-    padding: 16px;
-    text-align: center;
+  .ghost-btn{
+    background:transparent;
+    border:1px solid var(--line);
+    color:var(--ink-dim);
+    font-family:'Space Mono',monospace;
+    font-size:11.5px;
+    padding:7px 14px;
+    border-radius:6px;
+    cursor:pointer;
   }
-
-  .split-card.dan {
-    border: 2px solid var(--accent);
+  .ghost-btn:hover{border-color:var(--danger);color:var(--danger);}
+  .save-indicator{
+    font-family:'Space Mono',monospace;
+    font-size:10.5px;
+    color:var(--muted);
+    align-self:center;
+    margin-right:auto;
+    opacity:0;
+    transition:opacity 0.3s;
   }
-
-  .split-card.lex {
-    border: 2px solid #3A7D9B;
-  }
-
-  .split-label {
-    font-size: 12px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 6px;
-  }
-
-  .split-card.dan .split-label { color: var(--accent); }
-  .split-card.lex .split-label { color: #3A7D9B; }
-
-  .split-amount {
-    font-family: 'Space Mono', monospace;
-    font-size: 28px;
-    font-weight: 700;
-    line-height: 1;
-    margin: 8px 0;
-  }
-
-  .split-card.dan .split-amount { color: var(--accent); }
-  .split-card.lex .split-amount { color: #3A7D9B; }
-
-  .input-row {
-    display: flex;
-    gap: 12px;
-    margin-top: 16px;
-    flex-wrap: wrap;
-  }
-
-  .input-group {
-    flex: 1;
-    min-width: 140px;
-  }
-
-  .input-group label {
-    display: block;
-    font-size: 11px;
-    color: var(--ink-dim);
-    margin-bottom: 4px;
-    font-weight: 500;
-  }
-
-  .input-group input {
-    width: 100%;
-    padding: 10px 12px;
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    font-size: 15px;
-    font-family: 'Space Mono', monospace;
-  }
-
-  .input-group input:focus {
-    outline: none;
-    border-color: var(--accent);
-  }
-
-  /* Lex's expenses section */
-  .section {
-    background: white;
-    border: 1px solid var(--line);
-    border-radius: 16px;
-    padding: 20px;
-    margin-bottom: 24px;
-  }
-
-  .section-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 14px;
-  }
-
-  .section-header h3 {
-    margin: 0;
-    font-size: 15px;
-    font-weight: 600;
-  }
-
-  table {
-    width: 100%;
-    border-collapse: collapse;
-  }
-
-  th, td {
-    padding: 10px 8px;
-    text-align: left;
-    border-bottom: 1px solid var(--line);
-    font-size: 14px;
-  }
-
-  th {
-    font-size: 11px;
-    text-transform: uppercase;
-    color: var(--ink-dim);
-    font-weight: 500;
-  }
-
-  .amount-col {
-    text-align: right;
-    font-family: 'Space Mono', monospace;
-  }
-
-  .add-btn {
-    background: var(--accent-light);
-    color: var(--accent);
-    border: none;
-    padding: 8px 16px;
-    border-radius: 8px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    margin-top: 12px;
-  }
-
-  .add-btn:hover {
-    background: #D4E8DF;
-  }
-
-  /* Graph placeholder */
-  .graph-card {
-    background: white;
-    border: 1px solid var(--line);
-    border-radius: 16px;
-    padding: 20px;
-    margin-bottom: 24px;
-  }
-
-  .graph-card h3 {
-    margin: 0 0 12px;
-    font-size: 14px;
-    font-weight: 600;
-  }
-
-  .graph-placeholder {
-    height: 160px;
-    background: #F8F9F7;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--ink-dim);
-    font-size: 13px;
-    text-align: center;
-    padding: 20px;
-  }
-
-  .note {
-    font-size: 13px;
-    color: var(--ink-dim);
-    background: #F8F9F7;
-    padding: 14px 16px;
-    border-radius: 12px;
-    line-height: 1.5;
-  }
-
-  .note strong {
-    color: var(--ink);
-  }
+  .save-indicator.show{opacity:1;}
 </style>
 </head>
 <body>
 <div class="wrap">
 
-  <h1>Rent Pay-Forward • July 2026</h1>
-  <div class="subtitle">Living together but keeping money separate for now. This page makes the handoff clear.</div>
-
-  <!-- Big Rent Split Section -->
-  <div class="rent-header">
-    <h2>How much each of you needs to set aside for rent</h2>
-
-    <div class="split-grid">
-      <!-- Dan's Card -->
-      <div class="split-card dan">
-        <div class="split-label">Dan sets aside from this paycheck</div>
-        <div class="split-amount" id="danAmount">$850</div>
-        <div style="font-size:12px; color:#5C6B63;">Move this to “Rent” bucket immediately</div>
-      </div>
-
-      <!-- Lex's Card -->
-      <div class="split-card lex">
-        <div class="split-label">Lex sets aside from her paycheck</div>
-        <div class="split-amount" id="lexAmount">$1,000</div>
-        <div style="font-size:12px; color:#5C6B63;">Her expected contribution this cycle</div>
-      </div>
+  <div class="titlebar">
+    <button class="nav-btn" id="prevMonthBtn" title="Previous month">‹</button>
+    <div style="flex:1;">
+      <div class="eyebrow" id="eyebrowText">Daniel · Pay period —</div>
+      <h1 id="titleText">Ledger</h1>
     </div>
+    <button class="nav-btn" id="nextMonthBtn" title="Next month">›</button>
+  </div>
+  <div class="subhead">Every entry is editable — amounts, days, and whether it's even happening yet. Uncheck anything you're not sure about and see the balance recalculate.</div>
 
-    <div class="input-row">
-      <div class="input-group">
-        <label>Total Rent</label>
-        <input type="number" id="totalRent" value="1850" oninput="calculateSplit()">
+  <div class="summary" id="summaryCards"></div>
+
+  <div class="chart-card">
+    <div class="cap">Balance across the month</div>
+    <svg id="chartSvg" viewBox="0 0 800 190" preserveAspectRatio="none"></svg>
+    <div class="chart-legend" id="chartLegend"></div>
+    <div style="display:flex;align-items:center;gap:10px;margin-top:12px;flex-wrap:wrap;">
+      <div class="field" style="width:auto;">
+        <label>What if I saved up an extra</label>
+        <input type="number" step="0.01" id="testCushion" style="width:110px;">
       </div>
-      <div class="input-group">
-        <label>Lex’s bi-weekly take-home</label>
-        <input type="number" id="lexPay" value="1000" oninput="calculateSplit()">
-      </div>
-      <div class="input-group">
-        <label>Extra she can add this month</label>
-        <input type="number" id="lexExtra" value="0" oninput="calculateSplit()">
-      </div>
+      <button class="ghost-btn" id="fillSuggestedBtn" style="margin-bottom:1px;">use suggested amount</button>
+      <button class="ghost-btn" id="clearTestBtn" style="margin-bottom:1px;">clear</button>
     </div>
   </div>
 
-  <!-- Lex's Expenses Section -->
-  <div class="section">
-    <div class="section-header">
-      <h3>Lex’s Other Monthly Expenses</h3>
+  <div class="controls">
+    <div class="field">
+      <label id="startBalanceLabel">Starting balance</label>
+      <input type="number" step="0.01" id="startBalance">
     </div>
-
-    <table id="lexExpensesTable">
-      <thead>
-        <tr>
-          <th>Expense</th>
-          <th style="text-align:right;">Amount</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody id="lexExpensesBody">
-        <!-- Populated by JS -->
-      </tbody>
-    </table>
-
-    <button class="add-btn" onclick="addLexExpense()">+ Add her expense</button>
-
-    <div style="margin-top:16px; font-size:13px; color:#5C6B63;">
-      Total so far: <strong id="lexTotal">$0</strong>
+    <div class="field">
+      <label>Paycheck amount</label>
+      <input type="number" step="0.01" id="payAmount">
+    </div>
+    <div class="field">
+      <label>Any known payday</label>
+      <input type="date" id="payAnchor">
     </div>
   </div>
 
-  <!-- Simple Graph -->
-  <div class="graph-card">
-    <h3>Lex’s Money Flow (Simple View)</h3>
-    <div class="graph-placeholder">
-      Graph will show here once we have more of her expenses filled in.<br>
-      Right now it’s just a placeholder.
+  <h2>Income</h2>
+  <div class="ledger" id="incomeLedger"></div>
+
+  <h2>Expenses</h2>
+  <div class="ledger" id="expenseLedger"></div>
+
+  <h2>Debt Snapshot</h2>
+  <div class="ledger" id="debtLedger"></div>
+  <div class="note" style="margin-bottom:20px;">This section is a balance snapshot only — it doesn't pull from your daily cash flow above. A few of these already show up as monthly payments in the Expenses ledger (Affirm, Klarna, Navy Federal Credit); this is just the total still owed.</div>
+
+  <h2>Debt Payoff Plan</h2>
+  <div class="controls" style="margin-bottom:16px;">
+    <div class="field">
+      <label>Extra per month toward debt</label>
+      <input type="number" step="0.01" id="extraMonthly">
     </div>
+  </div>
+  <div class="summary" id="payoffCards" style="grid-template-columns:repeat(2,1fr);margin-bottom:16px;"></div>
+  <div class="chart-card">
+    <div class="cap">Total debt balance over time</div>
+    <svg id="payoffChartSvg" viewBox="0 0 800 190" preserveAspectRatio="none"></svg>
+    <div class="chart-legend">
+      <span><span class="swatch gold"></span>Avalanche (highest APR first)</span>
+      <span><span class="swatch blue"></span>Snowball (smallest balance first)</span>
+    </div>
+  </div>
+  <div class="note" style="margin-bottom:20px;">
+    <b>Avalanche</b> pays minimums everywhere and throws every extra dollar at your highest-interest balance first — mathematically the cheapest route. <b>Snowball</b> targets your smallest balance first regardless of rate — usually costs a bit more in total interest, but clears accounts fast for momentum. Once any account hits $0, its minimum payment automatically rolls into the extra pool for the next one — that's why the payoff speeds up over time even without adding more money.
   </div>
 
   <div class="note">
-    <strong>Why this page exists:</strong> You’re living together but handling money separately right now. This makes the rent handoff obvious and gives you visibility into her side without mixing everything. We can expand it later if you both want.
+    <b>"Save to avoid red"</b> is the minimum extra cushion you'd need sitting in the account at the start of the month to keep your balance at or above $0 the whole way through — it's calculated straight off your lowest point. Add that much (or more, for breathing room) and the red clears. <b>Amber-tagged rows</b> are ones you didn't give me a firm number or date for (the 3rd Affirm payment, the second gas fill-up, the exact rent day) — I made a reasonable guess. Fix them and everything downstream recalculates. <b>Unchecking</b> a row removes it from the math without deleting it, so you can test "what if I skip Amazon this cycle."
+  </div>
+
+  <div class="footer-actions">
+    <span class="save-indicator" id="saveIndicator">saved</span>
+    <button class="ghost-btn" id="resetBtn">Reset to defaults</button>
   </div>
 
 </div>
 
 <script>
-let lexExpenses = [
-  { id: 1, name: "Gas / Car", amount: 120 },
-  { id: 2, name: "Phone", amount: 65 },
-  { id: 3, name: "Groceries (her share)", amount: 150 }
-];
+const STORAGE_KEY = 'july2026-budget-v1';
 
-function calculateSplit() {
-  const rent = parseFloat(document.getElementById('totalRent').value) || 0;
-  const lexPay = parseFloat(document.getElementById('lexPay').value) || 0;
-  const extra = parseFloat(document.getElementById('lexExtra').value) || 0;
-
-  const lexShare = Math.min(lexPay + extra, rent);
-  const danShare = rent - lexShare;
-
-  document.getElementById('danAmount').textContent = '$' + danShare.toFixed(0);
-  document.getElementById('lexAmount').textContent = '$' + lexShare.toFixed(0);
+function defaultData(){
+  return {
+    startBalance: 177.09,
+    payAmount: 1581.00,
+    payAnchorDate: '2026-07-02',
+    testCushion: 0,
+    expenses: [
+      {id:'e1', day:3, label:'Rent', amount:1850.00, included:true, flag:'flex', note:'first week, exact day varies'},
+      {id:'e2', day:4, label:'Navy Federal Credit', amount:250.00, included:true, flag:''},
+      {id:'e3', day:5, label:'EZ Pass', amount:110.00, included:true, flag:''},
+      {id:'e4', day:6, label:'Gas (car)', amount:72.50, included:true, flag:'flex', note:'ranges $65-80'},
+      {id:'e5', day:8, label:'Affirm payment', amount:244.00, included:true, flag:''},
+      {id:'e6', day:8, label:'AT&T', amount:77.45, included:true, flag:''},
+      {id:'e7', day:8, label:'Amazon', amount:126.00, included:true, flag:''},
+      {id:'e8', day:8, label:'Gas bill (utility)', amount:49.00, included:true, flag:''},
+      {id:'e9', day:12, label:'Spotify', amount:13.77, included:true, flag:''},
+      {id:'e10', day:13, label:'Affirm payment #2', amount:66.36, included:true, flag:'flex', note:'day approximate'},
+      {id:'e11', day:17, label:'Car insurance', amount:87.47, included:true, flag:''},
+      {id:'e12', day:18, label:'Klarna', amount:24.25, included:true, flag:''},
+      {id:'e13', day:19, label:'Gas (car) #2', amount:72.50, included:true, flag:'flex', note:'ranges $65-80'},
+      {id:'e14', day:22, label:'Dropbox', amount:12.71, included:true, flag:''},
+      {id:'e15', day:23, label:'SoFi student loan', amount:179.58, included:true, flag:''},
+      {id:'e16', day:24, label:'Affirm payment #3', amount:66.36, included:true, flag:'unsure', note:'amount not confirmed — check this one'},
+      {id:'e17', day:29, label:'Comcast', amount:50.00, included:true, flag:''},
+      {id:'e18', day:29, label:'Car payment', amount:228.00, included:true, flag:''},
+      {id:'e19', day:31, label:'Misc / everyday purchases', amount:265.00, included:false, flag:'flex', note:"last month's total — toggle on to plan for it this month"}
+    ],
+    debts: [
+      {id:'d1', label:'Affirm', balance:694.95, apr:12.5, minPayment:376.72, flag:'flex', note:'rate is an average — you said plans run roughly 10–15%'},
+      {id:'d2', label:'Klarna', balance:72.75, apr:0, minPayment:24.25, flag:'unsure', note:'rate not confirmed — many Klarna plans are 0% if on schedule, check yours'},
+      {id:'d3', label:'PayPal Credit', balance:74.65, apr:0, minPayment:25, flag:'unsure', note:'check for a deferred-interest payoff deadline — missing it can trigger retroactive interest'},
+      {id:'d4', label:'Amazon Credit Card', balance:1493.58, apr:29.9, minPayment:35, flag:'unsure', note:'minimum payment is a guess — confirm your actual statement minimum'},
+      {id:'d5', label:"Lowe's", balance:473.52, apr:32, minPayment:25, flag:'unsure', note:'minimum payment is a guess — confirm your actual statement minimum'},
+      {id:'d6', label:'Navy Federal Credit Card', balance:22033.73, apr:13.15, minPayment:250, flag:'', note:''},
+      {id:'d7', label:'Navy Federal Loan', balance:4935.94, apr:16.7, minPayment:150, flag:'unsure', note:'minimum payment is a guess — confirm your actual fixed monthly payment'},
+      {id:'d8', label:'American Heritage Credit Card', balance:2732.25, apr:9.99, minPayment:55, flag:'unsure', note:'minimum payment is a guess — confirm your actual statement minimum'}
+    ],
+    extraMonthly: 0
+  };
 }
 
-function renderLexExpenses() {
-  const tbody = document.getElementById('lexExpensesBody');
-  tbody.innerHTML = '';
+let data = null;
 
-  let total = 0;
-
-  lexExpenses.forEach((exp, index) => {
-    total += exp.amount;
-
-    const row = document.createElement('tr');
-    row.innerHTML = `
-      <td><input type="text" value="${exp.name}" style="border:none; background:transparent; width:100%;" onchange="updateLexExpense(${index}, 'name', this.value)"></td>
-      <td class="amount-col"><input type="number" value="${exp.amount}" style="width:90px; text-align:right; border:1px solid #E0E4E0; border-radius:6px; padding:4px;" onchange="updateLexExpense(${index}, 'amount', this.value)"></td>
-      <td style="text-align:right;"><button onclick="deleteLexExpense(${index})" style="background:none; border:none; color:#C94C3D; font-size:16px; cursor:pointer;">×</button></td>
-    `;
-    tbody.appendChild(row);
-  });
-
-  document.getElementById('lexTotal').textContent = '$' + total.toFixed(0);
+async function loadData(){
+  try{
+    const res = await window.storage.get(STORAGE_KEY, false);
+    if(res && res.value){
+      data = JSON.parse(res.value);
+      if(!data.debts) data.debts = defaultData().debts;
+      else {
+        const defaults = defaultData().debts;
+        data.debts.forEach(d=>{
+          if(typeof d.apr !== 'number'){
+            const match = defaults.find(x=>x.label===d.label);
+            d.apr = match ? match.apr : 15;
+            d.minPayment = match ? match.minPayment : Math.max(25, d.balance*0.02);
+            d.flag = match ? match.flag : 'unsure';
+            d.note = match ? match.note : 'rate/minimum are guesses — please confirm';
+          }
+        });
+      }
+      if(typeof data.extraMonthly !== 'number') data.extraMonthly = 0;
+      if(!data.payAnchorDate){ data.payAnchorDate = '2026-07-02'; delete data.payDays; }
+      if(typeof data.testCushion !== 'number') data.testCushion = 0;
+      return;
+    }
+  }catch(e){ /* not found yet */ }
+  data = defaultData();
 }
 
-function updateLexExpense(index, field, value) {
-  if (field === 'amount') {
-    lexExpenses[index].amount = parseFloat(value) || 0;
-  } else {
-    lexExpenses[index].name = value;
+let saveTimeout;
+function saveData(){
+  clearTimeout(saveTimeout);
+  saveTimeout = setTimeout(async ()=>{
+    try{
+      await window.storage.set(STORAGE_KEY, JSON.stringify(data), false);
+      const ind = document.getElementById('saveIndicator');
+      ind.textContent = 'saved';
+      ind.classList.add('show');
+      setTimeout(()=>ind.classList.remove('show'), 1200);
+    }catch(e){
+      console.error('save failed', e);
+    }
+  }, 400);
+}
+
+function fmt(n){
+  const neg = n < 0;
+  const abs = Math.abs(n).toFixed(2);
+  return (neg ? '-$' : '$') + abs;
+}
+
+const WEEKDAY_SHORT = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const WEEKDAY_LETTER = ['S','M','T','W','T','F','S'];
+
+function daysInMonth(year, month){
+  return new Date(year, month+1, 0).getDate();
+}
+function monthNameFull(year, month){
+  return new Date(year, month, 1).toLocaleString('en-US', {month:'long'});
+}
+function monthAbbrev(year, month){
+  return new Date(year, month, 1).toLocaleString('en-US', {month:'short'});
+}
+function weekdayFor(year, month, day, dim){
+  const d = Math.min(Math.max(day,1), dim);
+  return new Date(year, month, d).getDay();
+}
+function getPayDaysForMonth(year, month){
+  const anchor = new Date(data.payAnchorDate + 'T00:00:00');
+  const dim = daysInMonth(year, month);
+  const result = [];
+  for(let day=1; day<=dim; day++){
+    const d = new Date(year, month, day);
+    const diffDays = Math.round((d - anchor) / 86400000);
+    if(((diffDays % 14) + 14) % 14 === 0) result.push(day);
   }
-  renderLexExpenses();
+  return result;
 }
 
-function deleteLexExpense(index) {
-  lexExpenses.splice(index, 1);
-  renderLexExpenses();
-}
-
-function addLexExpense() {
-  lexExpenses.push({
-    id: Date.now(),
-    name: "New expense",
-    amount: 0
+function computeBalances(year, month, payDays){
+  const dim = daysInMonth(year, month);
+  const net = new Array(dim+1).fill(0);
+  payDays.forEach(d=>{
+    if(d>=1 && d<=dim) net[d] += data.payAmount;
   });
-  renderLexExpenses();
-}
-
-// Initial setup
-function init() {
-  // Set initial values
-  document.getElementById('totalRent').value = 1850;
-  document.getElementById('lexPay').value = 1000;
-  document.getElementById('lexExtra').value = 0;
-
-  calculateSplit();
-  renderLexExpenses();
-
-  // Add listeners to recalculate when inputs change
-  ['totalRent', 'lexPay', 'lexExtra'].forEach(id => {
-    document.getElementById(id).addEventListener('input', calculateSplit);
+  data.expenses.forEach(e=>{
+    const day = Math.min(Math.max(e.day,1), dim);
+    if(e.included) net[day] -= e.amount;
   });
+  const balances = new Array(dim+1).fill(0);
+  let running = data.startBalance;
+  for(let d=1; d<=dim; d++){
+    running += net[d];
+    balances[d] = running;
+  }
+  return balances;
 }
 
-init();
+function render(){
+  const year = viewYear, month = viewMonth;
+  const dim = daysInMonth(year, month);
+  const payDays = getPayDaysForMonth(year, month);
+  const abbr = monthAbbrev(year, month);
+
+  // header
+  document.getElementById('titleText').textContent = monthNameFull(year, month) + ' Ledger';
+  document.getElementById('eyebrowText').textContent = payDays.length
+    ? `Daniel · Pay period ${abbr} ${payDays[0]} – ${abbr} ${payDays[payDays.length-1]}`
+    : `Daniel · ${monthNameFull(year, month)} ${year}`;
+  document.getElementById('startBalanceLabel').textContent = `Starting balance (${abbr} 1)`;
+
+  // sync controls
+  document.getElementById('startBalance').value = data.startBalance;
+  document.getElementById('payAmount').value = data.payAmount;
+  document.getElementById('payAnchor').value = data.payAnchorDate;
+  document.getElementById('testCushion').value = data.testCushion || '';
+  document.getElementById('extraMonthly').value = data.extraMonthly || '';
+
+  const balances = computeBalances(year, month, payDays);
+
+  // Summary
+  let lowestDay = 1, lowestVal = balances[1];
+  for(let d=1; d<=dim; d++){
+    if(balances[d] < lowestVal){ lowestVal = balances[d]; lowestDay = d; }
+  }
+  const totalIncome = payDays.length * data.payAmount;
+  const totalExpenses = data.expenses.filter(e=>e.included).reduce((s,e)=>s+e.amount,0);
+  const endBalance = balances[dim];
+  const lowWd = WEEKDAY_SHORT[weekdayFor(year,month,lowestDay,dim)];
+  const endWd = WEEKDAY_SHORT[weekdayFor(year,month,dim,dim)];
+  const cushionNeeded = Math.max(0, -lowestVal);
+  lastCushionNeeded = cushionNeeded;
+
+  const summaryEl = document.getElementById('summaryCards');
+  summaryEl.innerHTML = `
+    <div class="stat">
+      <div class="label">Lowest point</div>
+      <div class="value ${lowestVal<0?'danger':(lowestVal<100?'gold':'')}">${fmt(lowestVal)}</div>
+      <div class="sub">${abbr} ${lowestDay} · ${lowWd}</div>
+    </div>
+    <div class="stat">
+      <div class="label">Save to avoid red</div>
+      <div class="value ${cushionNeeded>0?'danger':'gold'}">${cushionNeeded>0 ? fmt(cushionNeeded) : '$0'}</div>
+      <div class="sub">${cushionNeeded>0 ? `before ${abbr} ${lowestDay}` : "you're covered"}</div>
+    </div>
+    <div class="stat">
+      <div class="label">End of month</div>
+      <div class="value ${endBalance<0?'danger':'gold'}">${fmt(endBalance)}</div>
+      <div class="sub">${abbr} ${dim} · ${endWd}</div>
+    </div>
+    <div class="stat">
+      <div class="label">Total income</div>
+      <div class="value">${fmt(totalIncome)}</div>
+      <div class="sub">${payDays.length} paycheck${payDays.length!==1?'s':''}</div>
+    </div>
+    <div class="stat">
+      <div class="label">Total expenses</div>
+      <div class="value">${fmt(totalExpenses)}</div>
+      <div class="sub">${data.expenses.filter(e=>e.included).length} active items</div>
+    </div>
+  `;
+
+  renderChart(balances, lowestDay, year, month, dim);
+  renderIncome(payDays, year, month, dim);
+  renderExpenses(balances, year, month, dim);
+  renderDebts();
+  renderPayoffPlan();
+}
+
+const DEBT_COLS = '1fr 90px 60px 80px 32px';
+
+function renderDebts(){
+  const el = document.getElementById('debtLedger');
+  const total = data.debts.reduce((s,d)=>s+d.balance,0);
+  const totalMin = data.debts.reduce((s,d)=>s+d.minPayment,0);
+  let html = `<div class="row head" style="grid-template-columns:${DEBT_COLS};"><div>Account</div><div>Balance</div><div>APR</div><div>Min/mo</div><div></div></div>`;
+  data.debts.forEach((d, i)=>{
+    const tag = d.flag === 'unsure' ? '<span class="tag" title="'+ (d.note||'') +'">check</span>'
+              : d.flag === 'flex' ? '<span class="tag" title="'+ (d.note||'') +'">flex</span>' : '';
+    html += `
+      <div class="row ${d.flag?'flagged':''}" style="grid-template-columns:${DEBT_COLS};${i%2===1?'background:var(--surface-2);':''}">
+        <div style="display:flex;align-items:center;">
+          <input type="text" value="${d.label}" onchange="updateDebt('${d.id}','label',this.value)">${tag}
+        </div>
+        <div class="amt-cell"><input type="number" step="0.01" value="${d.balance}" onchange="updateDebt('${d.id}','balance',this.value)"></div>
+        <div class="amt-cell"><input type="number" step="0.01" value="${d.apr}" onchange="updateDebt('${d.id}','apr',this.value)" title="APR %"></div>
+        <div class="amt-cell"><input type="number" step="0.01" value="${d.minPayment}" onchange="updateDebt('${d.id}','minPayment',this.value)" title="Minimum monthly payment"></div>
+        <div><button class="del-btn" onclick="deleteDebt('${d.id}')" title="Remove">×</button></div>
+      </div>`;
+  });
+  html += `
+    <div class="row" style="grid-template-columns:${DEBT_COLS};background:var(--surface-3);font-family:'Space Mono',monospace;font-weight:700;">
+      <div>Total</div>
+      <div class="bal-cell">${fmt(total)}</div>
+      <div></div>
+      <div class="bal-cell">${fmt(totalMin)}</div>
+      <div></div>
+    </div>
+    <div class="add-row"><button class="add-btn" onclick="addDebt()">+ add debt</button></div>`;
+  el.innerHTML = html;
+}
+
+function updateDebt(id, field, val){
+  const d = data.debts.find(x=>x.id===id);
+  if(!d) return;
+  if(field === 'balance') d.balance = parseFloat(val) || 0;
+  else if(field === 'apr') d.apr = parseFloat(val) || 0;
+  else if(field === 'minPayment') d.minPayment = parseFloat(val) || 0;
+  else if(field === 'label') d.label = val;
+  saveData(); render();
+}
+
+function deleteDebt(id){
+  data.debts = data.debts.filter(x=>x.id!==id);
+  saveData(); render();
+}
+
+function addDebt(){
+  const id = 'd' + Date.now();
+  data.debts.push({id, label:'New account', balance:0, apr:0, minPayment:0, flag:''});
+  saveData(); render();
+}
+
+function renderPayoffPlan(){
+  const extra = data.extraMonthly || 0;
+  const avalanche = simulatePayoff(data.debts, extra, 'avalanche');
+  const snowball = simulatePayoff(data.debts, extra, 'snowball');
+
+  const cardsEl = document.getElementById('payoffCards');
+  cardsEl.innerHTML = `
+    <div class="stat">
+      <div class="label">Avalanche — debt-free</div>
+      <div class="value gold">${avalanche.months===null ? '—' : avalanche.months + ' mo'}</div>
+      <div class="sub">${debtFreeDateLabel(avalanche.months)}${avalanche.months!==null ? ' · '+fmt(avalanche.totalInterest)+' interest' : ''}</div>
+    </div>
+    <div class="stat">
+      <div class="label">Snowball — debt-free</div>
+      <div class="value" style="color:var(--test);">${snowball.months===null ? '—' : snowball.months + ' mo'}</div>
+      <div class="sub">${debtFreeDateLabel(snowball.months)}${snowball.months!==null ? ' · '+fmt(snowball.totalInterest)+' interest' : ''}</div>
+    </div>
+  `;
+
+  renderPayoffChart(avalanche.history, snowball.history);
+}
+
+function renderPayoffChart(avalancheHistory, snowballHistory){
+  const W = 800, H = 190, padTop = 10, padBottom = 22, padX = 10;
+  const maxMonths = Math.max(avalancheHistory.length, snowballHistory.length) - 1;
+  const allVals = avalancheHistory.concat(snowballHistory);
+  const maxV = Math.max(...allVals, 0);
+  const chartH = H - padTop - padBottom;
+  const yFor = v => padTop + chartH - (v / (maxV || 1)) * chartH;
+  const xFor = m => padX + (maxMonths > 0 ? (m / maxMonths) * (W - padX*2) : 0);
+
+  function pathFor(hist){
+    let p = '';
+    hist.forEach((v, m)=>{
+      p += (m===0 ? 'M' : 'L') + xFor(m).toFixed(1) + ',' + yFor(v).toFixed(1) + ' ';
+    });
+    return p;
+  }
+
+  const avalanchePath = pathFor(avalancheHistory);
+  const snowballPath = pathFor(snowballHistory);
+
+  let yearTicks = '';
+  for(let m=0; m<=maxMonths; m+=12){
+    const x = xFor(m);
+    yearTicks += `<line x1="${x.toFixed(1)}" y1="${padTop}" x2="${x.toFixed(1)}" y2="${H-padBottom}" stroke="var(--line)" stroke-width="1"/>`;
+    yearTicks += `<text x="${x.toFixed(1)}" y="${H-8}" font-size="9" font-family="Space Mono, monospace" style="fill:var(--muted)" text-anchor="middle">${m===0?'now':'yr '+(m/12)}</text>`;
+  }
+
+  const svg = document.getElementById('payoffChartSvg');
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.innerHTML = `
+    ${yearTicks}
+    <path d="${avalanchePath}" class="balanceline"/>
+    <path d="${snowballPath}" class="testline"/>
+  `;
+}
+
+
+function simulatePayoff(debts, extraMonthly, strategy){
+  const working = debts.map(d=>({id:d.id, label:d.label, balance:d.balance, apr:d.apr, minPayment:d.minPayment}));
+  const order = strategy === 'avalanche'
+    ? [...working].sort((a,b)=> b.apr - a.apr)
+    : [...working].sort((a,b)=> a.balance - b.balance);
+
+  let months = 0;
+  let totalInterest = 0;
+  const MAX_MONTHS = 600;
+  const history = [working.reduce((s,d)=>s+d.balance,0)];
+
+  while(working.some(d=>d.balance > 0.005) && months < MAX_MONTHS){
+    months++;
+    working.forEach(d=>{
+      if(d.balance > 0){
+        const interest = d.balance * (d.apr/100/12);
+        d.balance += interest;
+        totalInterest += interest;
+      }
+    });
+    let freed = 0;
+    working.forEach(d=>{
+      if(d.balance > 0){
+        const pay = Math.min(d.minPayment, d.balance);
+        d.balance -= pay;
+      } else {
+        freed += d.minPayment;
+      }
+    });
+    let pool = extraMonthly + freed;
+    for(const d of order){
+      if(pool <= 0) break;
+      if(d.balance <= 0) continue;
+      const pay = Math.min(pool, d.balance);
+      d.balance -= pay;
+      pool -= pay;
+    }
+    working.forEach(d=>{ if(d.balance < 0.005) d.balance = 0; });
+    history.push(working.reduce((s,d)=>s+d.balance,0));
+  }
+
+  return {
+    months: months >= MAX_MONTHS ? null : months,
+    totalInterest,
+    history,
+    order: order.map(d=>d.label)
+  };
+}
+
+function debtFreeDateLabel(months){
+  if(months === null) return 'not with current payments';
+  const d = new Date();
+  d.setMonth(d.getMonth() + months);
+  return d.toLocaleString('en-US', {month:'long', year:'numeric'});
+}
+function renderChart(balances, lowestDay, year, month, dim){
+  const W = 800, H = 190, padTop = 10, padBottom = 22, padX = 10;
+  const cushion = data.testCushion || 0;
+  const testBalances = cushion !== 0 ? balances.map(v => v + cushion) : null;
+  const allVals = balances.slice(1).concat(testBalances ? testBalances.slice(1) : []);
+  const maxV = Math.max(...allVals, 0);
+  const minV = Math.min(...allVals, 0);
+  const range = (maxV - minV) || 1;
+  const chartH = H - padTop - padBottom;
+  const yFor = v => padTop + chartH - ((v - minV) / range) * chartH;
+  const xFor = d => padX + ((d-1) / (dim-1)) * (W - padX*2);
+  const colW = (W - padX*2) / dim;
+  const zeroY = yFor(0);
+
+  let path = '';
+  let areaPath = '';
+  for(let d=1; d<=dim; d++){
+    const x = xFor(d), y = yFor(balances[d]);
+    path += (d===1 ? 'M' : 'L') + x.toFixed(1) + ',' + y.toFixed(1) + ' ';
+  }
+  areaPath = 'M' + xFor(1) + ',' + zeroY + ' ';
+  for(let d=1; d<=dim; d++){
+    areaPath += 'L' + xFor(d).toFixed(1) + ',' + yFor(balances[d]).toFixed(1) + ' ';
+  }
+  areaPath += 'L' + xFor(dim) + ',' + zeroY + ' Z';
+
+  let testPath = '';
+  if(testBalances){
+    for(let d=1; d<=dim; d++){
+      const x = xFor(d), y = yFor(testBalances[d]);
+      testPath += (d===1 ? 'M' : 'L') + x.toFixed(1) + ',' + y.toFixed(1) + ' ';
+    }
+  }
+
+  const lowX = xFor(lowestDay), lowY = yFor(balances[lowestDay]);
+
+  // weekend shading + weekday letter ticks
+  let weekendRects = '';
+  let dayLabels = '';
+  for(let d=1; d<=dim; d++){
+    const wd = weekdayFor(year, month, d, dim);
+    const xLeft = padX + (d-1)*colW;
+    if(wd === 0 || wd === 6){
+      weekendRects += `<rect x="${xLeft.toFixed(1)}" y="${padTop}" width="${colW.toFixed(1)}" height="${chartH.toFixed(1)}" fill="rgba(140,147,133,0.07)"/>`;
+    }
+    dayLabels += `<text x="${(xLeft+colW/2).toFixed(1)}" y="${H-8}" font-size="8" font-family="Space Mono, monospace" style="fill:var(--muted)" text-anchor="middle">${WEEKDAY_LETTER[wd]}</text>`;
+  }
+
+  const svg = document.getElementById('chartSvg');
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.innerHTML = `
+    <defs>
+      <clipPath id="clipAbove"><rect x="0" y="0" width="${W}" height="${zeroY}"/></clipPath>
+      <clipPath id="clipBelow"><rect x="0" y="${zeroY}" width="${W}" height="${H-zeroY}"/></clipPath>
+    </defs>
+    ${weekendRects}
+    <path d="${areaPath}" class="fillpos" clip-path="url(#clipAbove)"/>
+    <path d="${areaPath}" class="fillneg" clip-path="url(#clipBelow)"/>
+    <line x1="0" y1="${zeroY.toFixed(1)}" x2="${W}" y2="${zeroY.toFixed(1)}" class="zeroline"/>
+    <path d="${path}" class="balanceline"/>
+    ${testPath ? `<path d="${testPath}" class="testline"/>` : ''}
+    <circle cx="${lowX.toFixed(1)}" cy="${lowY.toFixed(1)}" r="4" class="lowdot"/>
+    ${dayLabels}
+  `;
+
+  const legendEl = document.getElementById('chartLegend');
+  legendEl.innerHTML = testBalances
+    ? `<span><span class="swatch gold"></span>Actual</span><span><span class="swatch blue"></span>With +${fmt(cushion)} saved up</span>`
+    : `<span><span class="swatch gold"></span>Actual balance</span>`;
+}
+
+function renderIncome(payDays, year, month, dim){
+  const el = document.getElementById('incomeLedger');
+  let html = `<div class="row head"><div>Day</div><div>Source</div><div>Amount</div><div></div><div></div></div>`;
+  if(payDays.length === 0){
+    html += `<div class="row"><div colspan="5" style="grid-column:1/-1;color:var(--muted);">No paydays land in this month based on the anchor date.</div></div>`;
+  }
+  payDays.forEach(d=>{
+    const wd = WEEKDAY_SHORT[weekdayFor(year,month,d,dim)];
+    html += `
+      <div class="row">
+        <div class="day-cell">${d}<div style="font-size:9px;color:var(--muted);">${wd}</div></div>
+        <div>Paycheck</div>
+        <div class="amt-cell"><input type="number" step="0.01" value="${data.payAmount}" onchange="updatePayAmount(this.value)"></div>
+        <div></div>
+        <div></div>
+      </div>`;
+  });
+  el.innerHTML = html;
+}
+
+function renderExpenses(balances, year, month, dim){
+  const el = document.getElementById('expenseLedger');
+  const sorted = [...data.expenses].sort((a,b)=>a.day-b.day);
+  let html = `<div class="row head"><div>Day</div><div>Item</div><div>Amount</div><div>Bal.</div><div></div></div>`;
+  sorted.forEach((e, i)=>{
+    const clampedDay = Math.min(e.day, dim);
+    const bal = balances[clampedDay];
+    const wd = WEEKDAY_SHORT[weekdayFor(year,month,clampedDay,dim)];
+    const rowClasses = ['row'];
+    if(i % 2 === 1) rowClasses.push('altbg');
+    if(e.included && bal < 0) rowClasses.push('negative');
+    if(e.flag) rowClasses.push('flagged');
+    const tag = e.flag === 'unsure' ? '<span class="tag" title="'+ (e.note||'') +'">check</span>'
+              : e.flag === 'flex' ? '<span class="tag" title="'+ (e.note||'') +'">flex</span>' : '';
+    html += `
+      <div class="${rowClasses.join(' ')}">
+        <div>
+          <input type="number" min="1" max="31" value="${e.day}" style="text-align:center" onchange="updateExpense('${e.id}','day',this.value)">
+          <div style="font-size:9px;color:var(--muted);text-align:center;margin-top:2px;">${wd}</div>
+        </div>
+        <div style="display:flex;align-items:center;">
+          <input type="text" value="${e.label}" onchange="updateExpense('${e.id}','label',this.value)">${tag}
+        </div>
+        <div class="amt-cell"><input type="number" step="0.01" value="${e.amount}" onchange="updateExpense('${e.id}','amount',this.value)"></div>
+        <div class="bal-cell ${bal<0?'neg':''}">${e.included ? fmt(bal) : '—'}</div>
+        <div style="display:flex;align-items:center;gap:4px;">
+          <input type="checkbox" class="chk" ${e.included?'checked':''} onchange="updateExpense('${e.id}','included',this.checked)" title="Include in totals">
+          <button class="del-btn" onclick="deleteExpense('${e.id}')" title="Remove">×</button>
+        </div>
+      </div>`;
+  });
+  html += `<div class="add-row"><button class="add-btn" onclick="addExpense()">+ add expense</button></div>`;
+  el.innerHTML = html;
+}
+
+function updatePayAmount(val){
+  data.payAmount = parseFloat(val) || 0;
+  saveData(); render();
+}
+
+function updateExpense(id, field, val){
+  const e = data.expenses.find(x=>x.id===id);
+  if(!e) return;
+  if(field === 'day') e.day = Math.min(31, Math.max(1, parseInt(val,10) || 1));
+  else if(field === 'amount') e.amount = parseFloat(val) || 0;
+  else if(field === 'included') e.included = val;
+  else if(field === 'label') e.label = val;
+  saveData(); render();
+}
+
+function deleteExpense(id){
+  data.expenses = data.expenses.filter(x=>x.id!==id);
+  saveData(); render();
+}
+
+function addExpense(){
+  const id = 'e' + Date.now();
+  data.expenses.push({id, day:15, label:'New item', amount:0, included:true, flag:''});
+  saveData(); render();
+}
+
+document.getElementById('startBalance').addEventListener('change', function(){
+  data.startBalance = parseFloat(this.value) || 0;
+  saveData(); render();
+});
+document.getElementById('payAmount').addEventListener('change', function(){
+  data.payAmount = parseFloat(this.value) || 0;
+  saveData(); render();
+});
+document.getElementById('payAnchor').addEventListener('change', function(){
+  if(this.value){ data.payAnchorDate = this.value; saveData(); render(); }
+});
+document.getElementById('testCushion').addEventListener('input', function(){
+  data.testCushion = parseFloat(this.value) || 0;
+  saveData(); render();
+});
+document.getElementById('fillSuggestedBtn').addEventListener('click', function(){
+  data.testCushion = lastCushionNeeded;
+  saveData(); render();
+});
+document.getElementById('clearTestBtn').addEventListener('click', function(){
+  data.testCushion = 0;
+  saveData(); render();
+});
+document.getElementById('extraMonthly').addEventListener('input', function(){
+  data.extraMonthly = parseFloat(this.value) || 0;
+  saveData(); render();
+});
+document.getElementById('resetBtn').addEventListener('click', async function(){
+  data = defaultData();
+  saveData(); render();
+});
+document.getElementById('prevMonthBtn').addEventListener('click', function(){
+  viewMonth--;
+  if(viewMonth < 0){ viewMonth = 11; viewYear--; }
+  render();
+});
+document.getElementById('nextMonthBtn').addEventListener('click', function(){
+  viewMonth++;
+  if(viewMonth > 11){ viewMonth = 0; viewYear++; }
+  render();
+});
+
+let viewYear, viewMonth;
+let lastCushionNeeded = 0;
+
+(async function init(){
+  const today = new Date();
+  viewYear = today.getFullYear();
+  viewMonth = today.getMonth();
+  await loadData();
+  render();
+})();
 </script>
 </body>
 </html>
