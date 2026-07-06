@@ -267,6 +267,156 @@
   }
   .note b{color:var(--ink-dim);}
 
+  /* Tab strip under summary */
+  .tab-strip{
+    display:flex;
+    gap:0;
+    border:1px solid var(--line);
+    border-radius:8px;
+    overflow:hidden;
+    margin-bottom:18px;
+  }
+  .tab-btn{
+    flex:1;
+    background:var(--surface);
+    border:none;
+    border-right:1px solid var(--line);
+    color:var(--muted);
+    font-family:'Space Mono',monospace;
+    font-size:10.5px;
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+    padding:9px 6px;
+    cursor:pointer;
+    transition:background 0.15s, color 0.15s;
+  }
+  .tab-btn:last-child{border-right:none;}
+  .tab-btn:hover{background:var(--surface-2);color:var(--ink-dim);}
+  .tab-btn.active{background:var(--surface-3);color:var(--gold);}
+  .tab-panel{display:none;}
+  .tab-panel.active{display:block;}
+
+  /* Lex income panel */
+  .lex-panel{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:10px;
+    overflow:hidden;
+    margin-bottom:18px;
+  }
+  .lex-row{
+    display:grid;
+    grid-template-columns:44px 1fr 110px 32px;
+    gap:8px;
+    align-items:center;
+    padding:9px 10px;
+    background:var(--surface);
+    border-bottom:1px solid var(--line);
+    font-size:13px;
+  }
+  .lex-row.head{
+    background:var(--surface-3);
+    font-family:'Space Mono',monospace;
+    font-size:10px;
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+    color:var(--muted);
+    padding:8px 10px;
+  }
+  .lex-row:last-child{border-bottom:none;}
+  .lex-row input[type="number"],.lex-row input[type="text"]{
+    background:transparent;border:1px solid transparent;
+    color:var(--ink);font-family:'Space Mono',monospace;
+    font-size:13px;padding:5px 6px;border-radius:5px;width:100%;
+  }
+  .lex-row input[type="text"]{font-family:'Inter',sans-serif;}
+  .lex-row input:hover{border-color:var(--line);}
+  .lex-row input:focus{border-color:var(--gold-dim);outline:none;background:var(--surface-2);}
+  .lex-total{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:9px 14px;background:var(--surface-3);
+    font-family:'Space Mono',monospace;font-size:12px;font-weight:700;
+    border-top:1px solid var(--line);
+  }
+
+  /* Rent Pull Schedule */
+  .rent-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+    margin-bottom:18px;
+  }
+  @media(max-width:520px){.rent-grid{grid-template-columns:1fr;}}
+  .rent-person{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:10px;
+    overflow:hidden;
+  }
+  .rent-person-header{
+    background:var(--surface-3);
+    padding:10px 14px;
+    font-family:'Space Mono',monospace;
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:0.1em;
+    color:var(--gold);
+    border-bottom:1px solid var(--line);
+  }
+  .rent-pay-row{
+    display:grid;
+    grid-template-columns:auto 1fr auto;
+    gap:8px;
+    align-items:center;
+    padding:9px 14px;
+    border-bottom:1px solid var(--line);
+    font-size:13px;
+  }
+  .rent-pay-row:last-child{border-bottom:none;}
+  .rent-pay-row.header-row{
+    font-family:'Space Mono',monospace;
+    font-size:10px;
+    text-transform:uppercase;
+    letter-spacing:0.07em;
+    color:var(--muted);
+    background:var(--surface-2);
+  }
+  .rent-badge{
+    font-family:'Space Mono',monospace;
+    font-size:11px;
+    background:var(--surface-3);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:2px 7px;
+    color:var(--ink-dim);
+    white-space:nowrap;
+  }
+  .rent-amt{
+    font-family:'Space Mono',monospace;
+    font-size:13px;
+    color:var(--gold);
+    text-align:right;
+  }
+  .rent-total-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:10px 14px;
+    background:var(--surface-2);
+    border-top:1px solid var(--line);
+    font-family:'Space Mono',monospace;
+    font-size:12px;
+  }
+  .rent-total-row .label{color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;font-size:10px;}
+  .rent-total-row .value{color:var(--gold);font-size:14px;font-weight:700;}
+  .rent-controls{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    margin-bottom:14px;
+    align-items:flex-end;
+  }
+
   .footer-actions{
     display:flex;
     gap:10px;
@@ -310,6 +460,21 @@
   <div class="subhead">Every entry is editable — amounts, days, and whether it's even happening yet. Uncheck anything you're not sure about and see the balance recalculate.</div>
 
   <div class="summary" id="summaryCards"></div>
+
+  <!-- Tab strip -->
+  <div class="tab-strip">
+    <button class="tab-btn active" onclick="switchTab('main',this)">My income / expenses</button>
+    <button class="tab-btn" onclick="switchTab('lex',this)">Lex income</button>
+  </div>
+
+  <!-- Main tab (always visible — just the chart + controls) -->
+  <div class="tab-panel active" id="tab-main"></div>
+
+  <!-- Lex income tab -->
+  <div class="tab-panel" id="tab-lex">
+    <div class="note" style="margin-bottom:12px;">Enter Lex's actual paychecks below — day they land, label, and amount. Each entry is included in the main balance chart, total income, and the "save to avoid red" calculation. Uncheck any row to exclude it.</div>
+    <div class="lex-panel" id="lexLedger"></div>
+  </div>
 
   <div class="chart-card">
     <div class="cap">Balance across the month</div>
@@ -374,6 +539,25 @@
     <b>"Save to avoid red"</b> is the minimum extra cushion you'd need sitting in the account at the start of the month to keep your balance at or above $0 the whole way through — it's calculated straight off your lowest point. Add that much (or more, for breathing room) and the red clears. <b>Amber-tagged rows</b> are ones you didn't give me a firm number or date for (the 3rd Affirm payment, the second gas fill-up, the exact rent day) — I made a reasonable guess. Fix them and everything downstream recalculates. <b>Unchecking</b> a row removes it from the math without deleting it, so you can test "what if I skip Amazon this cycle."
   </div>
 
+  <h2>Rent Pull Schedule</h2>
+  <div class="note" style="margin-bottom:14px;">
+    Rent is <b>$1,800/mo</b> — split 50/50 at <b>$900 each</b>. Both of you are on the same biweekly pay schedule (~$1,581 Daniel / ~$1,000 Lex). The table below shows which paycheck to pull from each month so rent lands on time without either of you getting caught short. The rule: <b>pull half from each of the two paychecks closest to the 1st</b> — one before, one after.
+  </div>
+  <div class="rent-controls">
+    <div class="field">
+      <label>Lex paycheck amount</label>
+      <input type="number" step="0.01" id="lexPay" value="1000" style="width:130px;" oninput="renderRentSchedule()">
+    </div>
+    <div class="field">
+      <label>Monthly rent</label>
+      <input type="number" step="0.01" id="rentAmount" value="1800" style="width:130px;" oninput="renderRentSchedule()">
+    </div>
+  </div>
+  <div class="rent-grid" id="rentGrid"></div>
+  <div class="note" style="margin-bottom:30px;">
+    <b>How to use this:</b> Each person pulls their half-rent amount from the paycheck marked "pull." If rent is due the 1st, aim to have it set aside by the 28th–30th of the prior month. Lex's contribution can be Venmo'd or direct deposited to you before you pay the landlord.
+  </div>
+
   <div class="footer-actions">
     <span class="save-indicator" id="saveIndicator">saved</span>
     <button class="ghost-btn" id="resetBtn">Reset to defaults</button>
@@ -421,7 +605,8 @@ function defaultData(){
       {id:'d7', label:'Navy Federal Loan', balance:4935.94, apr:16.7, minPayment:150, flag:'unsure', note:'minimum payment is a guess — confirm your actual fixed monthly payment'},
       {id:'d8', label:'American Heritage Credit Card', balance:2732.25, apr:9.99, minPayment:55, flag:'unsure', note:'minimum payment is a guess — confirm your actual statement minimum'}
     ],
-    extraMonthly: 0
+    extraMonthly: 0,
+    lexIncome: []
   };
 }
 
@@ -446,6 +631,7 @@ async function loadData(){
         });
       }
       if(typeof data.extraMonthly !== 'number') data.extraMonthly = 0;
+      if(!Array.isArray(data.lexIncome)) data.lexIncome = [];
       if(!data.payAnchorDate){ data.payAnchorDate = '2026-07-02'; delete data.payDays; }
       if(typeof data.testCushion !== 'number') data.testCushion = 0;
       return;
@@ -510,6 +696,11 @@ function computeBalances(year, month, payDays){
   payDays.forEach(d=>{
     if(d>=1 && d<=dim) net[d] += data.payAmount;
   });
+  // Lex income entries
+  (data.lexIncome || []).forEach(e=>{
+    const day = Math.min(Math.max(e.day,1), dim);
+    if(e.included && e.amount) net[day] += e.amount;
+  });
   data.expenses.forEach(e=>{
     const day = Math.min(Math.max(e.day,1), dim);
     if(e.included) net[day] -= e.amount;
@@ -550,7 +741,8 @@ function render(){
   for(let d=1; d<=dim; d++){
     if(balances[d] < lowestVal){ lowestVal = balances[d]; lowestDay = d; }
   }
-  const totalIncome = payDays.length * data.payAmount;
+  const lexTotal = (data.lexIncome||[]).filter(e=>e.included&&e.amount).reduce((s,e)=>s+e.amount,0);
+  const totalIncome = payDays.length * data.payAmount + lexTotal;
   const totalExpenses = data.expenses.filter(e=>e.included).reduce((s,e)=>s+e.amount,0);
   const endBalance = balances[dim];
   const lowWd = WEEKDAY_SHORT[weekdayFor(year,month,lowestDay,dim)];
@@ -578,7 +770,7 @@ function render(){
     <div class="stat">
       <div class="label">Total income</div>
       <div class="value">${fmt(totalIncome)}</div>
-      <div class="sub">${payDays.length} paycheck${payDays.length!==1?'s':''}</div>
+      <div class="sub">${payDays.length} Daniel${lexTotal>0?' + Lex':''}</div>
     </div>
     <div class="stat">
       <div class="label">Total expenses</div>
@@ -590,6 +782,7 @@ function render(){
   renderChart(balances, lowestDay, year, month, dim);
   renderIncome(payDays, year, month, dim);
   renderExpenses(balances, year, month, dim);
+  renderLexIncome();
   renderDebts();
   renderPayoffPlan();
 }
@@ -959,12 +1152,161 @@ document.getElementById('nextMonthBtn').addEventListener('click', function(){
 let viewYear, viewMonth;
 let lastCushionNeeded = 0;
 
+function switchTab(name, btn){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-'+name).classList.add('active');
+}
+
+function renderLexIncome(){
+  const el = document.getElementById('lexLedger');
+  if(!el) return;
+  const entries = data.lexIncome || [];
+  let html = `<div class="lex-row head"><div>Day</div><div>Label</div><div>Amount</div><div></div></div>`;
+  entries.forEach((e,i)=>{
+    const wd = WEEKDAY_SHORT[weekdayFor(viewYear,viewMonth,Math.min(e.day,daysInMonth(viewYear,viewMonth)),daysInMonth(viewYear,viewMonth))];
+    html += `
+      <div class="lex-row" style="${i%2===1?'background:var(--surface-2);':''}">
+        <div>
+          <input type="number" min="1" max="31" value="${e.day}" style="text-align:center" onchange="updateLex('${e.id}','day',this.value)">
+          <div style="font-size:9px;color:var(--muted);text-align:center;margin-top:2px;">${wd}</div>
+        </div>
+        <div><input type="text" value="${e.label}" onchange="updateLex('${e.id}','label',this.value)"></div>
+        <div class="amt-cell"><input type="number" step="0.01" placeholder="0.00" value="${e.amount||''}" onchange="updateLex('${e.id}','amount',this.value)"></div>
+        <div style="display:flex;align-items:center;gap:4px;">
+          <input type="checkbox" class="chk" ${e.included?'checked':''} onchange="updateLex('${e.id}','included',this.checked)" title="Include in totals">
+          <button class="del-btn" onclick="deleteLex('${e.id}')" title="Remove">×</button>
+        </div>
+      </div>`;
+  });
+  const lexTotal = entries.filter(e=>e.included&&e.amount).reduce((s,e)=>s+e.amount,0);
+  html += `
+    <div class="lex-total">
+      <span style="color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:0.08em;">Total included</span>
+      <span style="color:var(--gold);">${fmt(lexTotal)}</span>
+    </div>
+    <div class="add-row"><button class="add-btn" onclick="addLex()">+ add Lex paycheck</button></div>`;
+  el.innerHTML = html;
+}
+
+function addLex(){
+  if(!data.lexIncome) data.lexIncome = [];
+  const id = 'l' + Date.now();
+  data.lexIncome.push({id, day:1, label:"Lex paycheck", amount:0, included:true});
+  saveData(); render();
+}
+
+function updateLex(id, field, val){
+  const e = (data.lexIncome||[]).find(x=>x.id===id);
+  if(!e) return;
+  if(field==='day') e.day = Math.min(31,Math.max(1,parseInt(val,10)||1));
+  else if(field==='amount') e.amount = parseFloat(val)||0;
+  else if(field==='included') e.included = val;
+  else if(field==='label') e.label = val;
+  saveData(); render();
+}
+
+function deleteLex(id){
+  data.lexIncome = (data.lexIncome||[]).filter(x=>x.id!==id);
+  saveData(); render();
+}
+
+function renderRentSchedule(){
+  const rentAmt = parseFloat(document.getElementById('rentAmount').value) || 1800;
+  const lexPay  = parseFloat(document.getElementById('lexPay').value)  || 1000;
+  const danielPay = data ? (data.payAmount || 1581) : 1581;
+  const half = rentAmt / 2;
+
+  // Generate next 4 months
+  const months = [];
+  const today = new Date();
+  for(let i = 0; i < 4; i++){
+    const d = new Date(today.getFullYear(), today.getMonth() + i, 1);
+    months.push({year: d.getFullYear(), month: d.getMonth()});
+  }
+
+  function getPayDays(year, month, anchor){
+    const dim = daysInMonth(year, month);
+    const result = [];
+    for(let day = 1; day <= dim; day++){
+      const d = new Date(year, month, day);
+      const diffDays = Math.round((d - anchor) / 86400000);
+      if(((diffDays % 14) + 14) % 14 === 0) result.push(day);
+    }
+    return result;
+  }
+
+  const anchor = new Date(data.payAnchorDate + 'T00:00:00');
+
+  // For each month, find payday closest before the 1st (could be in prior month)
+  // and first payday on/after the 1st
+  function getRelevantPaydays(year, month){
+    // look in prior month too
+    const prevDate = new Date(year, month - 1, 1);
+    const prevDays = getPayDays(prevDate.getFullYear(), prevDate.getMonth(), anchor)
+      .map(d => new Date(prevDate.getFullYear(), prevDate.getMonth(), d));
+    const curDays = getPayDays(year, month, anchor)
+      .map(d => new Date(year, month, d));
+    const allDays = [...prevDays, ...curDays];
+    const rentDue = new Date(year, month, 1);
+    // find last payday before or on 1st
+    const before = allDays.filter(d => d <= rentDue).sort((a,b)=>b-a)[0];
+    // find first payday after 1st
+    const after  = allDays.filter(d => d > rentDue).sort((a,b)=>a-b)[0];
+    return { before, after };
+  }
+
+  const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+  function fmtDate(d){
+    if(!d) return '—';
+    return monthNames[d.getMonth()].slice(0,3) + ' ' + d.getDate() + ' · ' + dayNames[d.getDay()];
+  }
+
+  function personCard(name, payAmt, months){
+    const eachPull = half / 2; // split evenly across 2 paychecks
+    const pct = ((eachPull / payAmt) * 100).toFixed(0);
+    let rows = '';
+    months.forEach(({year, month}) => {
+      const {before, after} = getRelevantPaydays(year, month);
+      rows += `
+        <div class="rent-pay-row">
+          <div class="rent-badge">${monthNames[month].slice(0,3)} ${year}</div>
+          <div>
+            <div style="font-size:12px;color:var(--ink-dim);">Pull <span style="color:var(--gold);font-family:'Space Mono',monospace;">${fmt(eachPull)}</span> on each:</div>
+            <div style="font-size:11.5px;color:var(--muted);margin-top:2px;">${fmtDate(before)} &amp; ${fmtDate(after)}</div>
+          </div>
+          <div class="rent-amt">${fmt(eachPull*2)}</div>
+        </div>`;
+    });
+    return `
+      <div class="rent-person">
+        <div class="rent-person-header">${name} — $${payAmt.toLocaleString()}/paycheck</div>
+        <div class="rent-pay-row header-row"><div>Month</div><div>Paychecks to pull from</div><div>Total</div></div>
+        ${rows}
+        <div class="rent-total-row">
+          <div>
+            <div class="label">Your share / mo</div>
+          </div>
+          <div class="value">${fmt(half)} <span style="font-size:10px;color:var(--muted);">(${pct}% of a check)</span></div>
+        </div>
+      </div>`;
+  }
+
+  const grid = document.getElementById('rentGrid');
+  if(!grid) return;
+  grid.innerHTML = personCard('Daniel', danielPay, months) + personCard('Lex', lexPay, months);
+}
+
 (async function init(){
   const today = new Date();
   viewYear = today.getFullYear();
   viewMonth = today.getMonth();
   await loadData();
   render();
+  renderRentSchedule();
 })();
 </script>
 </body>
